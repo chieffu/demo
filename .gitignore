@@ -1,0 +1,58 @@
+/target/
+# Java-specific ignores
+*.class # 忽略编译后的字节码文件
+
+# IDE 相关临时文件和设置
+.idea/
+*.iml
+*.ipr
+*.iws
+out/ # IntelliJ IDEA 输出目录
+target/ # Maven 或其他构建工具生成的输出目录
+build/ # Gradle 构建目录
+
+# 日志和快照数据
+logs/
+*.log
+*.dump
+*.hprof
+
+# 本地化和调试
+*.DS_Store # macOS系统下的隐藏资源文件
+thumbs.db # Windows系统下的缩略图缓存文件
+*.swp # Vim编辑器的临时文件
+*.swo # 编辑器临时交换文件
+
+# 配置文件备份和IDEA相关
+*. bak
+*.orig
+*.local
+*.tomcat
+*.pid
+
+# Git和Eclipse自动生成的文件
+.eclipse/
+.project
+.settings/
+
+# Junit测试报告
+test-output/
+reports/
+
+# 其他可能不需要版本控制的目录或文件
+node_modules/ # Node.js 项目依赖
+coverage/ # 测试覆盖率报告
+dist/ # 发布或打包后的目录
+bin/ # 可执行文件或编译后二进制文件
+
+# 如果使用Maven，可以忽略maven仓库本地副本
+.m2/
+
+# 如果使用Gradle，可以忽略gradle缓存和构建目录
+.gradle/
+
+# 如果项目中有特定的数据库或其他敏感文件夹，请在这里添加它们
+db_backups/
+
+# 仅作为示例，根据实际情况调整
+custom_directory/*
