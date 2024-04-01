@@ -4,6 +4,8 @@ import com.chieffu.pocker.blackjack.Blackjack;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -79,10 +81,35 @@ public class MockBlackjack {
 //                }
 //                log.info("{}靴{}把 压对子 期望：{}  结果：{}", shift, round, pair, result);
 //            }
-//            double luckyThree = blackjack.luckThreeExpectation(100, 40, 30, 10, 5);
-//            if(luckyThree>1.05){
-//
-//            }
+            double luckyThree = blackjack.luckThreeExpectation(100, 40, 30, 10, 5);
+            if(luckyThree>1.05){
+                List<Pocker> cards = Arrays.asList(px.get(0),px.get(1),pz.get(0));
+                if(isOneOfKind(cards)){
+                    if(isFlush(cards))
+                        result+=100;
+                    else
+                        result+=30;
+                }else if(isFlush(cards)) {
+                    if(isStraight(cards)){
+                        result+=40;
+                    }else {
+                        result += 5;
+                    }
+                }else if(isStraight(cards)){
+                    result+=10;
+                }else{
+                    result-=1;
+                }
+                count+=1;
+                if (maxWin < result) {
+                    maxWin = result;
+                }
+                if (minWin > result) {
+                    minWin = result;
+                }
+                log.info("{}靴{}把 压幸运三 期望：{}  结果：{}", shift, round, luckyThree, result);
+
+            }
 //            double hotThree = blackjack.hotThreeExpectation(100, 20, 4, 2, 1);
 
             blackjack.removePocker(px);
@@ -90,9 +117,46 @@ public class MockBlackjack {
             px.clear();
             pz.clear();
         }
+
+
         log.info("-第{}靴-----次数 = {} -------max={} ----- min={}----结果 = {}", shift, count, maxWin, minWin, result);
         return new double[]{count, result};
 
+    }
+
+    private static boolean isOneOfKind(List<Pocker> pockers){
+        pockers.sort(Comparator.comparing(Pocker::getNum));
+        boolean oneOfKind = true;
+        for(int i=1;i<pockers.size();i++){
+            if(pockers.get(i).getNum()!=pockers.get(i-1).getNum()){
+                oneOfKind = false;
+                break;
+            }
+        }
+        return oneOfKind;
+    }
+    private static boolean isFlush(List<Pocker> pockers){
+        pockers.sort(Comparator.comparing(Pocker::getSuit));
+        boolean flush = true;
+        for(int i=1;i<pockers.size();i++){
+            if(pockers.get(i).getSuit()!=pockers.get(i-1).getSuit()){
+                flush = false;
+                break;
+            }
+        }
+        return flush;
+    }
+    private static boolean isStraight(List<Pocker> pockers) {
+        pockers.sort(Comparator.comparing(Pocker::getNum));
+        boolean straight = true;
+        for(int i=1;i<pockers.size();i++){
+            if(i==1&&pockers.get(0).getNum()==1 && pockers.get(pockers.size()-1).getNum()==13)continue;
+            if(pockers.get(i).getNum()!=pockers.get(i-1).getNum()+1){
+                straight = false;
+                break;
+            }
+        }
+        return straight;
     }
 
     public static void main(String[] args) {
