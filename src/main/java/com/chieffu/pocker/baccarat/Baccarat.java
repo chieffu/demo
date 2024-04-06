@@ -154,7 +154,7 @@ public class Baccarat {
             double d4 = pock.xLongBao();
             if (d4 >= 1.0D) {
                 c4++;
-                logger.info("{}靴{}把 闲龙宝：{}", new Object[]{Integer.valueOf(shift), Integer.valueOf(round), Double.valueOf(d4)});
+                logger.info("{}靴{}把 闲龙宝：{}", Integer.valueOf(shift), Integer.valueOf(round), Double.valueOf(d4));
                 if (px3 == null && pz3 == null) {
                     if ((x3 == 9 || x3 == 8) && x3 > z3) {
                         r4++;
@@ -306,7 +306,7 @@ public class Baccarat {
                                                 int q22 = j1 + j2;
                                                 if (q22 >= 10)
                                                     q22 -= 10;
-                                                long pre5 = multiply(new int[]{k1, k2, k3, d1, d2});
+                                                long pre5 = multiply(k1, k2, k3, d1, d2);
                                                 if (q22 <= 2) {
                                                     sum = getSum(z, sum, q22, pre5);
                                                 } else if (q22 == 3) {
@@ -368,7 +368,7 @@ public class Baccarat {
                                                 int d3 = this.pai[j3];
                                                 if (d3 > 0) {
                                                     this.pai[j3] = d3 - 1;
-                                                    sum += multiply(new int[]{k1, k2, d1, d2, d3}) * countPai();
+                                                    sum += multiply(k1, k2, d1, d2, d3) * countPai();
                                                     this.pai[j3] = d3;
                                                 }
                                             }
@@ -425,7 +425,7 @@ public class Baccarat {
                             if (j2 < 0)
                                 j2 += 10;
                             int d2 = this.pai[j2];
-                            sum += multiply(new int[]{k1, k2, d1, d2});
+                            sum += multiply(k1, k2, d1, d2);
                             this.pai[j1] = d1;
                         }
                     }
@@ -460,8 +460,8 @@ public class Baccarat {
     public void removePai(int num, int huaSe) {
         int k = this.pk[num - 1][huaSe];
         if (k == 0) {
-            log.error(String.format("第 %s 桌 ，第 %s 靴 ，第 %s 轮开的扑克牌：%s 不存在", new Object[]{Integer.valueOf(this.tableId), Integer.valueOf(this.currentShoe), Integer.valueOf(this.latestRound), new Pocker(huaSe, num)}));
-            throw new RuntimeException(String.format("第 %s 桌 ，第 %s 靴 ，第 %s 轮开的扑克牌：%s 不存在", new Object[]{Integer.valueOf(this.tableId), Integer.valueOf(this.currentShoe), Integer.valueOf(this.latestRound), new Pocker(huaSe, num)}));
+            log.error(String.format("第 %s 桌 ，第 %s 靴 ，第 %s 轮开的扑克牌：%s 不存在", Integer.valueOf(this.tableId), Integer.valueOf(this.currentShoe), Integer.valueOf(this.latestRound), new Pocker(huaSe, num)));
+            throw new RuntimeException(String.format("第 %s 桌 ，第 %s 靴 ，第 %s 轮开的扑克牌：%s 不存在", Integer.valueOf(this.tableId), Integer.valueOf(this.currentShoe), Integer.valueOf(this.latestRound), new Pocker(huaSe, num)));
         }
         this.pk[num - 1][huaSe] = k - 1;
         if (num >= 10) {

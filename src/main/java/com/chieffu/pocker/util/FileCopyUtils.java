@@ -4,6 +4,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -174,7 +175,7 @@ public abstract class FileCopyUtils {
         if (file.exists()) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                 String tmp = null;
                 while ((tmp = br.readLine()) != null) {
                     contents.add(tmp);

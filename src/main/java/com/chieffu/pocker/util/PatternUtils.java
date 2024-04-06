@@ -22,7 +22,7 @@ public abstract class PatternUtils {
             }
             while (m.find()) {
                 for (i = 0; i < groupCount; i++) {
-                    ((List<String>) matchs.get(i)).add(m.group(i));
+                    matchs.get(i).add(m.group(i));
                 }
             }
         } catch (Exception e) {

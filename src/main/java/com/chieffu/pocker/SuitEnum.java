@@ -8,8 +8,8 @@ public enum SuitEnum {
         DIAMOND(3,"方块");
 
         // 每个枚举常量对应一个字符串描述
-        private String description;
-        private int huaSe;
+        private final String description;
+        private final int huaSe;
 
         // 构造器用于初始化每个枚举成员
         SuitEnum(int huaSe,String description) {

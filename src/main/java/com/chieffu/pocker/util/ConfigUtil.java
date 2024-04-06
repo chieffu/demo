@@ -1,6 +1,7 @@
 package com.chieffu.pocker.util;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -14,7 +15,7 @@ public abstract class ConfigUtil {
         return df.format(new Date());
     }
 
-    private static Properties settings = new Properties();
+    private static final Properties settings = new Properties();
     private static long configInilastModified;
 
     public static String getSetting(String key, String defaultValue) {
@@ -36,7 +37,7 @@ public abstract class ConfigUtil {
             if (file.exists() && file.lastModified() > configInilastModified) {
 
                 try {
-                    br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "utf-8"));
+                    br = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                     settings.load(br);
                 } catch (Exception exception) {
                 } finally {
@@ -63,7 +64,7 @@ public abstract class ConfigUtil {
         PrintWriter pw = null;
 
         try {
-            pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File("config.ini")), "utf-8"));
+            pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File("config.ini")), StandardCharsets.UTF_8));
             settings.store(pw, "auto save config.ini");
         } catch (FileNotFoundException fileNotFoundException) {
         } catch (UnsupportedEncodingException unsupportedEncodingException) {

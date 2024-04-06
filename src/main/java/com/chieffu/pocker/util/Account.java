@@ -33,7 +33,7 @@ public class Account implements Serializable, Cloneable {
 
     public static Account newAccount(String a) {
         if (a.startsWith("{") && a.endsWith("}")) {
-            return (Account) JSONObject.parseObject(a, Account.class);
+            return JSONObject.parseObject(a, Account.class);
         }
         if (a == null) {
             return null;

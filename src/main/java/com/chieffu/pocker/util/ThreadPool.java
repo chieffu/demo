@@ -11,8 +11,8 @@
    static AtomicInteger poolNumber = new AtomicInteger();
    static AtomicInteger threadNumber = new AtomicInteger(1);
    private boolean pause = false;
-   private ReentrantLock pauseLock = new ReentrantLock();
-   private Condition unpaused = this.pauseLock.newCondition();
+   private final ReentrantLock pauseLock = new ReentrantLock();
+   private final Condition unpaused = this.pauseLock.newCondition();
  
    
    public ThreadPool(int coreThread) {
@@ -22,7 +22,7 @@
              SecurityManager s = System.getSecurityManager();
              
              ThreadGroup group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-             String name = String.format("p%02d-t%03d", new Object[] { Integer.valueOf(ThreadPool.poolNumber.get()), Integer.valueOf(ThreadPool.threadNumber.getAndIncrement()) });
+             String name = String.format("p%02d-t%03d", Integer.valueOf(ThreadPool.poolNumber.get()), Integer.valueOf(ThreadPool.threadNumber.getAndIncrement()));
              
              Thread t = new Thread(group, r, name, 0L);
              if (t.isDaemon()) {

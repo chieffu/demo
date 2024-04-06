@@ -2,6 +2,7 @@ package com.chieffu.pocker.blackjack;
 
 import com.chieffu.pocker.Pocker;
 import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -11,15 +12,22 @@ import java.util.stream.Collectors;
 @Data
 public class Blackjack {
     static List<List<List<Integer>>> bags = bags(21);
-    private  int[] pai;
+    private int[] pai;
 
     private int[][] pk;
 
     private List<Pocker> decks;
 
+    List<Stage> zStage ;
+
+
     public Blackjack(int n) {
         init(n);
         decks = Pocker.randomPocker(n);
+        zStage = new ArrayList<>();
+        for(int i =0;i<=21;i++){
+           zStage.add(initZStage(i));
+        }
     }
 
     /**
@@ -51,46 +59,238 @@ public class Blackjack {
         return p(n, k) / p(k, k);
     }
 
-    /**
-     * 递归生成和为 1 到 n 的所有集合，集合的元素只能取 1-11的数字。
-     * 给定一个正整数n，该函数将返回一个列表，其中每个元素也是一个列表，代表了不同袋子的容量组合。
-     * 每个袋子的容量由一个整数列表表示，且列表中的整数按照升序排列。
-     *
-     * @param n 指定的递归迭代的最终点数。
-     * @return
-     */
-    public static List<List<List<Integer>>> bags(int n) {
-        List<List<List<Integer>>> results = new ArrayList<>();
-        List<List<Integer>> pre = Collections.singletonList(Collections.singletonList(1));
-        results.add(pre);
-        for (int i = 2; i <= n; i++) {
-            List<List<Integer>> next = new ArrayList<>();
-            for (List<Integer> list : pre) {
-                List<Integer> addOne = new ArrayList<>(list);
-                addOne.add(1);
-                Collections.sort(addOne);
-                next.add(addOne);
+    public static boolean isStraight(List<Pocker> pockers) {
+        pockers.sort(Comparator.comparing(Pocker::getNum));
+        boolean straight = true;
+        for (int i = 1; i < pockers.size(); i++) {
+            if (i == 1 && pockers.get(0).getNum() == 1 && pockers.get(pockers.size() - 1).getNum() == 13) continue;
+            if (pockers.get(i).getNum() != pockers.get(i - 1).getNum() + 1) {
+                straight = false;
+                break;
             }
-            for (List<Integer> list : pre) {
-                Map<Integer, Integer> groups = groups(list);
-                for (Integer k : groups.keySet()) {
-                    if (k >= 11) continue;
-                    List<Integer> plusOne = new ArrayList<>(list);
-                    plusOne.remove(k);
-                    plusOne.add(k + 1);
-                    Collections.sort(plusOne);
-                    if (!next.contains(plusOne)) {
-                        next.add(plusOne);
-                    }
-                }
-            }
-            results.add(next);
-            pre = next;
-            next.sort(Comparator.comparingInt(List::size));
         }
-        return results;
+        return straight;
     }
 
+    public static boolean isFlush(List<Pocker> pockers) {
+        pockers.sort(Comparator.comparing(Pocker::getSuit));
+        boolean flush = true;
+        for (int i = 1; i < pockers.size(); i++) {
+            if (pockers.get(i).getSuit() != pockers.get(i - 1).getSuit()) {
+                flush = false;
+                break;
+            }
+        }
+        return flush;
+    }
+
+    public static boolean isOneOfKind(List<Pocker> pockers) {
+        pockers.sort(Comparator.comparing(Pocker::getNum));
+        boolean oneOfKind = true;
+        for (int i = 1; i < pockers.size(); i++) {
+            if (pockers.get(i).getNum() != pockers.get(i - 1).getNum()) {
+                oneOfKind = false;
+                break;
+            }
+        }
+        return oneOfKind;
+    }
+
+    /**
+     * 计算点数为dot的牌的张牌
+     */
+    public static int countPai(int[] pai, int dot) {
+        if (dot <= 0 || dot > 11) return 0;
+        return pai[dot == 11 ? 1 : dot];
+    }
+
+    /**
+     * 返回背包中各个元素出现的次数。
+     *
+     * @param bag 包含整数元素的列表。
+     * @return 一个映射，其中键是列表中的唯一元素，值是该元素在列表中出现的次数。
+     */
+    public static Map<Integer, Integer> groups(List<Integer> bag) {
+        Map<Integer, List<Integer>> map = bag.stream().collect(Collectors.groupingBy(Integer::new));
+        Map<Integer, Integer> result = new LinkedHashMap<>();
+        for (Integer key : map.keySet()) {
+            result.put(key, map.get(key).size());
+        }
+        return result;
+    }
+
+    public static int dot(Pocker pocker) {
+        return pocker.getNum() >= 10 ? 10 : pocker.getNum();
+    }
+
+    public static int[] dots(List<Pocker> pockers) {
+        return dots(pockers.toArray(new Pocker[0]));
+    }
+
+    public static int[] dots(Pocker... pockers) {
+        int sum = Arrays.stream(pockers).mapToInt(Blackjack::dot).sum();
+        if (sum <= 11 && Arrays.stream(pockers).anyMatch(p -> p.getNum() == 1)) {
+            return new int[]{sum, sum + 10};
+        }
+        return new int[]{sum};
+    }
+
+
+    @Getter
+    static class Stage {
+        Stage parent;
+        List<Stage> next;
+        Integer pai;
+        int[] dot;
+
+        public Stage addZStage(Integer card) {
+            if (next == null) return null;
+            Stage stage = new Stage();
+            stage.pai = card;
+            stage.parent = this;
+            stage.dot = stage.dot();
+            next.add(stage);
+            if (stage.largeDot()> 16 && stage.largeDot() <= 21 || stage.smallDot() > 16) {
+                stage.next = null;
+            } else {
+                stage.next = new LinkedList<>();
+            }
+            return stage;
+        }
+
+
+        public Stage addXStage(Integer card,int[] pai) {
+            if (next == null) return null;
+            Stage stage = new Stage();
+            stage.pai = card;
+            stage.parent = this;
+            stage.dot = stage.dot();
+            next.add(stage);
+            if (stage.largeDot()< 12){
+                stage.next = new LinkedList<>();
+            } else {
+                // 根据牌面计算是否要牌，整理出最佳决策数
+            }
+            return stage;
+        }
+
+        public List<Integer> getCards() {
+            List<Integer> list = new LinkedList<>();
+            Stage st = this;
+            while (st != null && st.pai != null) {
+                list.add(0, st.pai);
+                st = st.parent;
+            }
+            return list;
+        }
+
+        public int getRootDot(){
+            Stage stage = this;
+            while(stage.parent!=null){
+                stage=stage.parent;
+            }
+            return stage.getDot()==null?0:stage.largeDot();
+        }
+        private int[] dot() {
+            List<Integer> cards = getCards();
+            int sum = cards.stream().mapToInt(Integer::intValue).sum();
+            int current = getRootDot();
+            sum+=current;
+            if (sum <= 11 && cards.contains(1)) {
+                return new int[]{sum, sum + 10};
+            } else {
+                return new int[]{sum};
+            }
+        }
+
+        public int largeDot() {
+            return dot[dot.length - 1];
+        }
+
+        public int smallDot() {
+            return dot[0];
+        }
+
+        public String toString() {
+            return pai == null ? "--" : largeDot() + " \t " + getCards().stream().map(String::valueOf).collect(Collectors.joining(","));
+        }
+
+        public double rate(int[] pai) {
+            double result = 1.0;
+            List<Integer> cards = getCards();
+            int total = Arrays.stream(pai).sum();
+            for (int card : cards) {
+                result *= pai[card]-- / (double) total--;
+            }
+            for (int card : cards) {
+                pai[card]++;
+            }
+            if (result < 0) result = 0;
+            return result;
+        }
+    }
+
+    public Stage initZStage( int currentDot) {
+        Stage root = new Stage();
+        root.next = new LinkedList<>();
+        root.dot=new int[]{currentDot};
+        Queue<Stage> stages = new LinkedList<>();
+        stages.add(root);
+        addZSubStage(stages);
+        return root;
+    }
+
+    private void addZSubStage(Queue<Stage> stages) {
+        while (!stages.isEmpty()) {
+            Stage root = stages.poll();
+            for (int i = 1; i <= 10; i++) {
+                Stage stage = root.addZStage(i);
+                if (stage != null) {
+                    stages.add(stage);
+                }
+            }
+        }
+    }
+
+    private void addFilterEndStage(Queue<Stage> notEndNode, List<Stage> result) {
+        while (!notEndNode.isEmpty()) {
+            Stage root = notEndNode.poll();
+            if (root.getNext() == null) {
+                result.add(root);
+                continue;
+            }
+            for (Stage stage : root.getNext()) {
+                notEndNode.add(stage);
+            }
+        }
+    }
+
+    public List<Stage> getZEndStage(int current) {
+        LinkedList<Stage> stages = new LinkedList<>();
+        stages.add(zStage.get(current));
+        List<Stage> result = new LinkedList<>();
+        addFilterEndStage(stages, result);
+        return result;
+    }
+
+    public Map<Integer, Double> zRate(int[] pai,int currentDot) {
+        Map<Integer, Double> rates = new HashMap<>();
+        List<Stage> stages = getZEndStage(currentDot);
+        Map<Integer, List<Stage>> groups = stages.stream().collect(Collectors.groupingBy(stage -> stage.largeDot()));
+        for (int i = 17; i <= 26; i++) {
+            List<Stage> stages1 = groups.get(i);
+            double rate = 0.0;
+            for (Stage s : stages1) {
+                double r = s.rate(pai);
+                // System.out.println(s + " \t " + r);
+                rate += r;
+            }
+            System.out.println("current:"+currentDot+" ---------- totalDot:" + i + " --------end stage size:" + stages1.size() + "  rate: " + rate);
+            rates.put(i, rate);
+        }
+        return rates;
+
+    }
 
     private void init(int n) {
         pai = new int[11];
@@ -121,6 +321,13 @@ public class Blackjack {
         return pai[dot == 11 ? 1 : dot];
     }
 
+    /**
+     * 计算花色为huaSe，点数为dot的牌的张数
+     *
+     * @param huaSe 花色
+     * @param dot   点数
+     * @return 张数
+     */
     public int countPai(int huaSe, int dot) {
         assert (huaSe >= 0 && huaSe < 4);
         if (dot <= 0 || dot > 11) return 0;
@@ -322,6 +529,46 @@ public class Blackjack {
     }
 
     /**
+     * 递归生成和为 1 到 n 的所有集合，集合的元素只能取 1-11的数字。
+     * 给定一个正整数n，该函数将返回一个列表，其中每个元素也是一个列表，代表了不同袋子的容量组合。
+     * 每个袋子的容量由一个整数列表表示，且列表中的整数按照升序排列。
+     *
+     * @param n 指定的递归迭代的最终点数。
+     * @return
+     */
+    protected static List<List<List<Integer>>> bags(int n) {
+        List<List<List<Integer>>> results = new ArrayList<>();
+        List<List<Integer>> pre = Collections.singletonList(Collections.singletonList(1));
+        results.add(pre);
+        for (int i = 2; i <= n; i++) {
+            List<List<Integer>> next = new ArrayList<>();
+            for (List<Integer> list : pre) {
+                List<Integer> addOne = new ArrayList<>(list);
+                addOne.add(1);
+                Collections.sort(addOne);
+                next.add(addOne);
+            }
+            for (List<Integer> list : pre) {
+                Map<Integer, Integer> groups = groups(list);
+                for (Integer k : groups.keySet()) {
+                    if (k >= 11) continue;
+                    List<Integer> plusOne = new ArrayList<>(list);
+                    plusOne.remove(k);
+                    plusOne.add(k + 1);
+                    Collections.sort(plusOne);
+                    if (!next.contains(plusOne)) {
+                        next.add(plusOne);
+                    }
+                }
+            }
+            results.add(next);
+            pre = next;
+            next.sort(Comparator.comparingInt(List::size));
+        }
+        return results;
+    }
+
+    /**
      * 计算 烫三手 数学期望
      *
      * @param threeSevenOdds 三张都为7的 赔率
@@ -353,16 +600,40 @@ public class Blackjack {
      * @return 返回计算出的赢利概率，当前实现中总是返回0。
      */
     public double luckyQueenExpectation(double luckyQueenWithBjOdds, double luckyQueenOdds, double purePairOdds, double OddsPure20, double odds20) {
-        long purePairQueue = c(pk[1][11],2);
+        long purePairQueue = c(pk[1][11], 2);
         int countPai = countPai();
-        double luckyQueenWithBj = 1.0 * c(countPai(1),1) * c(countPai(10)-2,1) / 2 * purePairQueue / c(countPai, 4);
-        double luckyQueen = 1.0*purePairQueue/c(countPai,2);
+        double luckyQueenWithBj = 1.0 * c(countPai(1), 1) * c(countPai(10) - 2, 1) / 2 * purePairQueue / c(countPai, 4);
+        double luckyQueen = 1.0 * purePairQueue / c(countPai, 2);
         double purePair = checkPurePair();
         double pureP2_20 = checkFlush20Of2Rate();
         double p2_20 = p2(20);
 
-        return (luckyQueenWithBjOdds+1) * luckyQueenWithBj  + (luckyQueenOdds+1) * (luckyQueen -luckyQueenWithBj) + (purePairOdds+1) * (purePair-luckyQueen) + (OddsPure20+1) * pureP2_20 + (odds20+1) * (p2_20 - pureP2_20);
+        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair - luckyQueen) + (OddsPure20 + 1) * pureP2_20 + (odds20 + 1) * (p2_20 - pureP2_20);
     }
+
+
+    /**
+     * 计算 庄家爆破的 数学期望
+     *
+     * @return
+     */
+    public double bloomExpectation(double bloom3Odds, double bloom4Odds, double bloom5Odds, double bloom6Odds, double bloom7Odds, double bloom8Odds) {
+
+        List<Stage> stages = getZEndStage(0);
+        Map<Integer, List<Stage>> groups = stages.stream().filter(s -> s.largeDot() > 21).collect(Collectors.groupingBy(s -> s.getCards().size()));
+        double rate3 = Optional.ofNullable(groups.get(3)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate4 = Optional.ofNullable(groups.get(4)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate5 = Optional.ofNullable(groups.get(5)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate6 = Optional.ofNullable(groups.get(6)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate7 = Optional.ofNullable(groups.get(7)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate8 = Optional.ofNullable(groups.get(8)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate9 = Optional.ofNullable(groups.get(9)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate10 = Optional.ofNullable(groups.get(10)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+
+        return rate3 * bloom3Odds + rate4 * bloom4Odds + rate5 * bloom5Odds + rate6 * bloom6Odds + rate7 * bloom7Odds + (rate8 + rate9 + rate10) * bloom8Odds;
+
+    }
+
 
     /**
      * 计算3张同花 21 点的概率
@@ -440,43 +711,6 @@ public class Blackjack {
     }
 
 
-    public double zPp(int current, int n) {
-        List<List<Integer>> bagN = bags.get(n - 1);
-        double sum = 0;
-        for (List<Integer> bag : bagN) {
-            sum += zRate(bag, current);
-        }
-        return sum;
-    }
-
-
-    public double zPp(int n) {
-        List<List<Integer>> bagN = bags.get(n - 1);
-        double sum = 0;
-        for (List<Integer> bag : bagN) {
-            sum += zRate(bag, 0);
-        }
-        return sum;
-    }
-
-    public double xPp(int threshold, int n) {
-        List<List<Integer>> bagN = bags.get(n - 1);
-        double sum = 0;
-        for (List<Integer> bag : bagN) {
-            sum += rate(bag, 0, threshold);
-        }
-        return sum;
-    }
-
-    public double xPp(int current, int threshold, int n) {
-        List<List<Integer>> bagN = bags.get(n - 1);
-        double sum = 0;
-        for (List<Integer> bag : bagN) {
-            sum += rate(bag, current, threshold);
-        }
-        return sum;
-    }
-
 
     /**
      * 表示庄家只有2张牌且不爆牌的概率
@@ -491,28 +725,16 @@ public class Blackjack {
         return sum;
     }
 
-    public double rZNotBloom() {
-        double sum = 0;
+    /**
+     * 表示庄家不爆牌的概率
+     *
+     * @return 双精度浮点数，表示庄家不爆牌的概率。
+     */
+    public double rZNotBloom(int currentDot) {
+        Map<Integer, Double> rates = zRate(getPai(),currentDot);
+        Double sum = 0.0;
         for (int i = 17; i <= 21; i++) {
-            sum += zPp(i);
-        }
-        return sum;
-    }
-
-    public double rZNotBloom(int current) {
-        if (current >= 17 && current <= 21) return 1;
-        double sum = 0;
-        for (int i = 17 - current; i <= 21 - current; i++) {
-            sum += zPp(current, i);
-        }
-        return sum;
-    }
-
-    public double rXNotBloom(int current, int threshold) {
-        if (current >= threshold && current <= 21) return 1;
-        double sum = 0;
-        for (int i = threshold - current; i <= 21 - current; i++) {
-            sum += xPp(current, threshold, i);
+            sum += rates.get(i);
         }
         return sum;
     }
@@ -530,209 +752,58 @@ public class Blackjack {
 
     public double rBjWin() {
         double bj = p2(21);
-        double bjbj = 1.0 * c(countPai(1), 2) * c(countPai(10), 2) * 16 / p(countPai(), 4);
+        double bjbj = 1.0 * c(countPai(1), 2) * c(countPai(10), 2) * c(2, 1) * c(2, 1) * c(2, 1) / p(countPai(), 4);
         return bj - bjbj;
     }
 
 
     /**
-     * 计算 庄家当前牌面为current时，出现 指定ks列表中牌的概率
+     * 移除牌
      *
-     * @param ks      指定牌面列表，代表某种特定的状态集合。
-     * @param current 当前的点数值。
-     * @return 返回满足条件的概率值，若不满足条件则返回0。
+     * @param pks
      */
-    private double zRate(List<Integer> ks, int current) {
-        Map<Integer, Integer> groups = groups(ks);
-        int size = ks.size();
-        // 如果列表长度大于等于8 (最小点数为2，8张2为16点，只要出现过1张A（A可作为11点，则早就出现了超过16点的情况，这种场景不会出现
-        // 长度大于等于5且包含1但不包含11，包含1时，A可以做11点计算，这时至少超过16点了，要么爆牌要么超16点，概率为0
-        if (size >= 8 || size >= 5 && groups.containsKey(1) && !groups.containsKey(11)) return 0;
-
-        // 计算最终庄家点数 sum0
-        int sum0 = ks.stream().mapToInt(Integer::intValue).sum() + current;
-        double count = 1;
-
-        for (Integer k : groups.keySet()) {
-            if (k == 1 && groups.containsKey(11)) {
-                int m = groups.get(k) + groups.get(11);
-                count *= c(countPai(k), m);
-            } else if (!(k == 11 && groups.containsKey(1))) {
-                int m = groups.get(k);
-                count *= c(countPai(k), m);
-            }
-        }
-        if (sum0 >= 17) {
-            // 计算超过16的部分
-            int theLast = sum0 - 16;
-            int theLastCount = 0; //最后一张牌出来之前，所有点数之和不能超过16点
-            for (int i = size - 1; i >= 0; i--) {
-                if (ks.get(i) >= theLast) {
-                    theLastCount++;
-                }
-            }
-            if (!groups.containsKey(1)) {
-                count = count * theLastCount / size;
-                return count / c(countPai(), size);
-            }
-        }
-
-        return count / c(countPai(), size);
-    }
-
-    /**
-     * 返回背包中各个元素出现的次数。
-     *
-     * @param bag 包含整数元素的列表。
-     * @return 一个映射，其中键是列表中的唯一元素，值是该元素在列表中出现的次数。
-     */
-    private static Map<Integer, Integer> groups(List<Integer> bag) {
-        Map<Integer, List<Integer>> map = bag.stream().collect(Collectors.groupingBy(Integer::new));
-        Map<Integer, Integer> result = new LinkedHashMap<>();
-        for (Integer key : map.keySet()) {
-            result.put(key, map.get(key).size());
-        }
-        return result;
-    }
-
-    private double rate(List<Integer> ks, int current, int threshold) {
-        Map<Integer, Integer> groups = groups(ks);
-        int size = ks.size();
-        if (size >= 8 || size >= 5 && groups.containsKey(1) && !groups.containsKey(11)) return 0;
-        int sum0 = ks.stream().mapToInt(Integer::intValue).sum() + current;
-        double count = 1;
-        if (groups.containsKey(1) && groups.containsKey(10) && !groups.containsKey(11) && sum0 > threshold) {
-            return 0;
-        }
-        for (Integer k : groups.keySet()) {
-            if (k == 1 && groups.containsKey(11)) {
-                int m = groups.get(k) + groups.get(11);
-                count *= c(countPai(k), m);
-            } else if (!(k == 11 && groups.containsKey(1))) {
-                int m = groups.get(k);
-                count *= c(countPai(k), m);
-            }
-        }
-        if (sum0 >= threshold) {
-            int theLast = sum0 - threshold + 1;
-            int theLastCount = 0;
-            for (int i = size - 1; i >= 0; i--) {
-                if (ks.get(i) >= theLast) {
-                    theLastCount++;
-                }
-            }
-            if (groups.containsKey(1) && groups.containsKey(11) && sum0 > threshold) {
-                theLastCount -= groups.get(11);
-            }
-            count = count * theLastCount / size;
-        }
-        return count / c(countPai(), size);
-    }
-
-    public double rXWin() {
-        double bjHe = 1.0 * c(countPai(1), 2) * c(countPai(10), 2) * 16 / p(countPai(), 4);
-
-        double[] zPps = new double[22];
-        for (int i = 17; i <= 21; i++) {
-            zPps[i] = zPp(i);
-        }
-        double[][] xPps = new double[18][22];
-        double maxRate = 0;
-        for (int threshold = 12; threshold <= 17; threshold++) {
-            xPps[threshold] = new double[22];
-            for (int i = threshold; i <= 21; i++) {
-                xPps[threshold][i] = xPp(threshold, i);
-            }
-            double zNotBloom = Arrays.stream(zPps).sum();
-            double zBloom = 1 - zNotBloom;
-            double x17Ping = zPps[17] * xPps[threshold][17];
-            double x18Ping = zPps[18] * xPps[threshold][18];
-            double x19Ping = zPps[19] * xPps[threshold][19];
-            double x20Ping = zPps[20] * xPps[threshold][20];
-            double x21Ping = (zPps[21] - p2(21)) * (xPps[threshold][21] - p2(21)) + bjHe;
-            double z17Lose = zPps[17] * (xPps[threshold][18] + xPps[threshold][19] + xPps[threshold][20] + xPps[threshold][21] - p2(21));
-            double z18Lose = zPps[18] * (xPps[threshold][19] + xPps[threshold][20] + xPps[threshold][21] - p2(21));
-            double z19Lose = zPps[19] * (xPps[threshold][20] + xPps[threshold][21] - p2(21));
-            double z20Lose = zPps[20] * (xPps[threshold][21] - p2(21));
-            double ping = x17Ping + x18Ping + x19Ping + x20Ping + x21Ping + bjHe;
-            double zLose = (zBloom + z17Lose + z18Lose + z19Lose + z20Lose) * 2;
-            double bjWin = (rBjWin() - bjHe) * 2.5;
-            double rate = ping + zLose + bjWin;
-            if (maxRate < rate) {
-                maxRate = rate;
-            }
-        }
-        return maxRate;
-    }
-
-
     public void removePocker(List<Pocker> pks) {
         for (Pocker p : pks) {
             removePocker(p);
         }
     }
 
+    /**
+     * 移除牌
+     *
+     * @param p
+     */
     public void removePocker(Pocker p) {
         if (p != null) {
             int dot = dot(p);
             if (pai[dot] <= 0) {
-                throw new RuntimeException("扑克牌" + p.toString() + "多了");
+                throw new RuntimeException("扑克牌" + p + "多了");
             }
             pai[dot]--;
-            if (pk[p.getSuit().getHuaSe()][p.getNum()-1] <= 0) {
-                throw new RuntimeException("扑克牌" + p.toString() + "多了");
+            if (pk[p.getSuit().getHuaSe()][p.getNum() - 1] <= 0) {
+                throw new RuntimeException("扑克牌" + p + "多了");
             }
-            pk[p.getSuit().getHuaSe()][p.getNum()-1]--;
+            pk[p.getSuit().getHuaSe()][p.getNum() - 1]--;
         }
     }
 
-    public static int dot(Pocker pocker) {
-        return pocker.getNum() >= 10 ? 10 : pocker.getNum();
-    }
-
-    public static int[] dots(List<Pocker> pockers) {
-        return dots(pockers.toArray(new Pocker[0]));
-    }
-
-    public static int[] dots(Pocker... pockers) {
-        int sum = Arrays.stream(pockers).mapToInt(Blackjack::dot).sum();
-        if (sum <= 11 && Arrays.stream(pockers).anyMatch(p -> p.getNum() == 1)) {
-            return new int[]{sum, sum + 10};
-        }
-        return new int[]{sum};
-    }
-
-
-
-    private static void printBag() {
-        for (int i = 1; i <= 21; i++) {
-            List<List<Integer>> bagI = bags.get(i - 1);
-            log.info("bag {} ---------------------------- count {} ", i, bagI.size());
-            for (List<Integer> bag : bagI) {
-                log.info("bag {} --{}", i, bag.stream().map(String::valueOf).collect(Collectors.joining(",")));
-            }
-        }
-    }
 
     private static void test0() {
         Blackjack blackjack = new Blackjack(8);
-        printBag();
         double sum2 = 0;
         int threshold = 13;
         for (int i = 1; i <= 21; i++) {
             double p1 = blackjack.p1(i);
             double p2 = blackjack.p2(i);
-            double zPp = blackjack.zPp(i);
-            double xPp = blackjack.xPp(threshold, i);
-            if (i >= threshold) {
-                sum2 += xPp;
-            }
-            log.info("{} -----p1={}  ----- p2={} ----- zPp={} ---- xPp={}", i, p1, p2, zPp, xPp);
+            sum2 += p2;
+            log.info("{} -----p1={}  ----- p2={} ", i, p1, p2);
         }
         log.info(" sum2 = {}", sum2);
         log.info(" rBjWin = {}", blackjack.rBjWin());
         log.info(" z2 = {}", blackjack.z2());
-        log.info(" zNotBloom = {}", blackjack.rZNotBloom());
+        for(int i=0;i<=16;i++) {
+            log.info(" zNotBloom current:{}  rate:{}",i, blackjack.rZNotBloom(i));
+        }
 //        for (int i = 0; i <= 21; i++) {
 //            log.info("{} - zNotBloom {}", i, blackjack.rZNotBloom(i));
 //        }
@@ -744,11 +815,13 @@ public class Blackjack {
         log.info("对子 ： {} ", blackjack.pairExpectation(25, 8));
         log.info("幸运3 ： {} ", blackjack.luckThreeExpectation(100, 40, 30, 10, 5));
         log.info("烫三手 ： {} ", blackjack.hotThreeExpectation(100, 20, 4, 2, 1));
-        log.info("幸运女皇 ： {} ", blackjack.luckyQueenExpectation(1000, 125, 19, 9,4));
+        log.info("幸运女皇 ： {} ", blackjack.luckyQueenExpectation(1000, 125, 19, 9, 4));
+        log.info(" 庄爆： {} ", blackjack.bloomExpectation(1, 2, 9, 50, 100,250));
     }
 
     public static void main(String[] args) {
-         test0();
+        test0();
 
     }
+
 }

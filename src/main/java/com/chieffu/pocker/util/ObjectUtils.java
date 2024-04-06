@@ -374,7 +374,7 @@ public abstract class ObjectUtils {
 
                 buffer.append(", ");
             }
-            buffer.append(String.valueOf(array[i]));
+            buffer.append(array[i]);
         }
         buffer.append("}");
         return buffer.toString();

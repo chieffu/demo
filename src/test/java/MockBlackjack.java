@@ -1,11 +1,11 @@
 import com.chieffu.pocker.Pocker;
 import com.chieffu.pocker.SuitEnum;
 import com.chieffu.pocker.blackjack.Blackjack;
+import com.chieffu.pocker.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -21,7 +21,7 @@ public class MockBlackjack {
         double result = 0;
         double maxWin = 0.0;
         double minWin = 0.0;
-        while (pks.size() > 100) {
+        while (pks.size() > StringUtils.newRandomInt(80,120)) {
             round++;
 
             px.add(pks.remove(pks.size() - 1));
@@ -61,41 +61,43 @@ public class MockBlackjack {
                 if (minWin > result) {
                     minWin = result;
                 }
-                //log.info("{}靴{}把 压幸运女皇 期望：{}  结果：{}", shift, round, luckyQueue, result);
+//                log.info("{}靴{}把 压幸运女皇 期望：{}  结果：{}", shift, round, luckyQueue, result);
             }
-//            double pair = blackjack.pairExpectation(25, 8);
-//            if (pair > 1) {
-//                count += 1;
-//                if(px.get(0).equals(px.get(1))) {
-//                    result += 25;
-//                }else if(px.get(0).getNum() == px.get(1).getNum()){
-//                    result +=8;
-//                }else{
-//                    result-=1;
-//                }
-//                if (maxWin < result) {
-//                    maxWin = result;
-//                }
-//                if (minWin > result) {
-//                    minWin = result;
-//                }
-//                log.info("{}靴{}把 压对子 期望：{}  结果：{}", shift, round, pair, result);
-//            }
+
+
+            double pair = blackjack.pairExpectation(25, 8);
+            if (pair > 1) {
+                count += 1;
+                if(px.get(0).equals(px.get(1))) {
+                    result += 25;
+                }else if(px.get(0).getNum() == px.get(1).getNum()){
+                    result +=8;
+                }else{
+                    result-=1;
+                }
+                if (maxWin < result) {
+                    maxWin = result;
+                }
+                if (minWin > result) {
+                    minWin = result;
+                }
+                log.info("{}靴{}把 压对子 期望：{}  结果：{}", shift, round, pair, result);
+            }
             double luckyThree = blackjack.luckThreeExpectation(100, 40, 30, 10, 5);
             if(luckyThree>1.05){
                 List<Pocker> cards = Arrays.asList(px.get(0),px.get(1),pz.get(0));
-                if(isOneOfKind(cards)){
-                    if(isFlush(cards))
+                if(Blackjack.isOneOfKind(cards)){
+                    if(Blackjack.isFlush(cards))
                         result+=100;
                     else
                         result+=30;
-                }else if(isFlush(cards)) {
-                    if(isStraight(cards)){
+                }else if(Blackjack.isFlush(cards)) {
+                    if(Blackjack.isStraight(cards)){
                         result+=40;
                     }else {
                         result += 5;
                     }
-                }else if(isStraight(cards)){
+                }else if(Blackjack.isStraight(cards)){
                     result+=10;
                 }else{
                     result-=1;
@@ -110,8 +112,34 @@ public class MockBlackjack {
                 log.info("{}靴{}把 压幸运三 期望：{}  结果：{}", shift, round, luckyThree, result);
 
             }
-//            double hotThree = blackjack.hotThreeExpectation(100, 20, 4, 2, 1);
 
+            double hotThree = blackjack.hotThreeExpectation(100, 20, 4, 2, 1);
+            if(hotThree>1.05){
+                List<Pocker> cards = Arrays.asList(px.get(0),px.get(1),pz.get(0));
+                int[] dots = Blackjack.dots(cards);
+                if(dots[dots.length-1]==21){
+
+                    if(Blackjack.isFlush(cards)){
+                        result+=20;
+                    }else {
+                        result += 4;
+                    }
+                }else if(dots[dots.length-1]==20){
+                    result+=2;
+                }else if(dots[dots.length-1]==19){
+                    result+=1;
+                }else{
+                    result-=1;
+                }
+                count+=1;
+                if (maxWin < result) {
+                    maxWin = result;
+                }
+                if (minWin > result) {
+                    minWin = result;
+                }
+              //  log.info("{}靴{}把 压烫三手 期望：{}  结果：{}", shift, round, hotThree, result);
+            }
             blackjack.removePocker(px);
             blackjack.removePocker(pz);
             px.clear();
@@ -124,46 +152,11 @@ public class MockBlackjack {
 
     }
 
-    private static boolean isOneOfKind(List<Pocker> pockers){
-        pockers.sort(Comparator.comparing(Pocker::getNum));
-        boolean oneOfKind = true;
-        for(int i=1;i<pockers.size();i++){
-            if(pockers.get(i).getNum()!=pockers.get(i-1).getNum()){
-                oneOfKind = false;
-                break;
-            }
-        }
-        return oneOfKind;
-    }
-    private static boolean isFlush(List<Pocker> pockers){
-        pockers.sort(Comparator.comparing(Pocker::getSuit));
-        boolean flush = true;
-        for(int i=1;i<pockers.size();i++){
-            if(pockers.get(i).getSuit()!=pockers.get(i-1).getSuit()){
-                flush = false;
-                break;
-            }
-        }
-        return flush;
-    }
-    private static boolean isStraight(List<Pocker> pockers) {
-        pockers.sort(Comparator.comparing(Pocker::getNum));
-        boolean straight = true;
-        for(int i=1;i<pockers.size();i++){
-            if(i==1&&pockers.get(0).getNum()==1 && pockers.get(pockers.size()-1).getNum()==13)continue;
-            if(pockers.get(i).getNum()!=pockers.get(i-1).getNum()+1){
-                straight = false;
-                break;
-            }
-        }
-        return straight;
-    }
-
     public static void main(String[] args) {
         double[] cr = new double[2];
         double maxWin=0;
         double minWin=0;
-        for (int i = 1; i <= 1000; i++) {
+        for (int i = 1; i <= 2000; i++) {
             Blackjack bj = new Blackjack(8);
             double[] cri = mock(i, bj);
             for (int j = 0; j < cri.length; j++) {
@@ -173,7 +166,7 @@ public class MockBlackjack {
             if(cr[1]<minWin) minWin=cr[1];
         }
         log.info("-次数 = {} -------max={} ----- min={}----结果 = {}", cr[0],maxWin,minWin,cr[1]);
-
+//bjhui24 huihui2403   2.tt
     }
 
 }

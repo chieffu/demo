@@ -161,7 +161,7 @@ public class CmdUtil {
         do {
             String tasklist = exeCommandTaskList();
             pid = PatternUtils.matchFirst(tasklist, "(?i)" + cmd + "(.exe)?\\s+(\\d+)", 2);
-            log.info(execCommand(3000L, new String[]{"taskkill /F /pid " + pid}));
+            log.info(execCommand(3000L, "taskkill /F /pid " + pid));
         } while (pid.length() > 0);
     }
 

@@ -79,7 +79,7 @@ public class InputPanel
 
     public void actionPerformed(ActionEvent e) {
         this.value = this.input.getText().trim();
-        setImage((BufferedImage) null);
+        setImage(null);
         if (this.thread != null) {
             LockSupport.unpark(this.thread);
             this.thread = null;

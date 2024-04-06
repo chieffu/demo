@@ -36,6 +36,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,10 +50,10 @@ public class Browser {
 
     private static final String HTML_META_CHARSET_REGEX = "(?i)(<meta\\s*http-equiv\\s*=\\s*(\"|')content-type(\"|')\\s*content\\s*=\\s*(\"|')text/?\\w+;\\s*charset\\s*=\\s*(.*?)(\"|')\\s*/?>)";
     private static boolean pause = false;
-    private static ReentrantLock pauseLock = new ReentrantLock();
+    private static final ReentrantLock pauseLock = new ReentrantLock();
     private static final String REFERER = "Referer";
-    private static Condition unpaused = pauseLock.newCondition();
-    private static Map<String, String> DNT_HEADER = new HashMap<String, String>() {
+    private static final Condition unpaused = pauseLock.newCondition();
+    private static final Map<String, String> DNT_HEADER = new HashMap<String, String>() {
     };
     private Account account;
     private String currentContent;
@@ -86,7 +87,7 @@ public class Browser {
         if ((new File(agentFile)).exists() &&
                 ConfigUtil.getSetting("User-Agents") == null) {
             try {
-                String agents = FileCopyUtils.copyToString(new InputStreamReader(new FileInputStream(agentFile), "utf-8"));
+                String agents = FileCopyUtils.copyToString(new InputStreamReader(new FileInputStream(agentFile), StandardCharsets.UTF_8));
                 ConfigUtil.addSetting("User-Agents", agents);
             } catch (IOException e) {
 
@@ -122,9 +123,9 @@ public class Browser {
     }
 
 
-    private BasicCookieStore cookieStore = new BasicCookieStore();
+    private final BasicCookieStore cookieStore = new BasicCookieStore();
 
-    private HttpClient httpClient;
+    private final HttpClient httpClient;
     private HttpHost proxy;
     private boolean enableLog = true;
     private StatusLine statusLine;
@@ -132,8 +133,8 @@ public class Browser {
     private boolean isShutDown;
     private String charset = "UTF-8";
     private Object attachement;
-    private String userAgent = getAUserAgent();
-    private Map<String, Object> attributes = new ConcurrentHashMap<>();
+    private final String userAgent = getAUserAgent();
+    private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private int connectionTimeout = 6000;
     private int readTimeout = 6000;
 
@@ -143,9 +144,9 @@ public class Browser {
         manager.setDefaultMaxPerRoute(100);
 
         return HttpClientBuilder.create()
-                .setRedirectStrategy((RedirectStrategy) new LaxRedirectStrategy())
-                .setConnectionManager((HttpClientConnectionManager) manager)
-                .setDefaultCookieStore((CookieStore) this.cookieStore)
+                .setRedirectStrategy(new LaxRedirectStrategy())
+                .setConnectionManager(manager)
+                .setDefaultCookieStore(this.cookieStore)
                 .setRetryHandler(new HttpRequestRetryHandler() {
                     public boolean retryRequest(IOException e, int ec, HttpContext context) {
                         if (ec > 3) {
@@ -184,7 +185,7 @@ public class Browser {
     }
 
     public Browser() {
-        this.httpClient = (HttpClient) newHttpClient();
+        this.httpClient = newHttpClient();
     }
 
     public Browser(Account acc) {
@@ -223,7 +224,7 @@ public class Browser {
         if (expiry != null) {
             cookie.setExpiryDate(expiry);
         }
-        this.cookieStore.addCookie((Cookie) cookie);
+        this.cookieStore.addCookie(cookie);
     }
 
     public void removeCookie(String name) {
@@ -268,7 +269,7 @@ public class Browser {
                 }
             }
             if (posibleCookies.size() == 1) {
-                return ((Cookie) posibleCookies.get(0)).getValue();
+                return posibleCookies.get(0).getValue();
             }
             if (posibleCookies.size() == 0) {
                 return null;
@@ -396,7 +397,7 @@ public class Browser {
             RequestConfig requestConfig = newRequestConfig();
             get.setConfig(requestConfig);
             HttpCoreContext context = new HttpCoreContext();
-            response = this.httpClient.execute((HttpUriRequest) get, (HttpContext) context);
+            response = this.httpClient.execute(get, context);
             HttpRequestWrapper wrapper = (HttpRequestWrapper) context.getAttribute("http.request");
             if (wrapper != null) {
                 HttpGet original = (HttpGet) wrapper.getOriginal();
@@ -465,7 +466,7 @@ public class Browser {
             }
         }
         HttpCoreContext context = new HttpCoreContext();
-        HttpResponse response = this.httpClient.execute((HttpUriRequest) get, (HttpContext) context);
+        HttpResponse response = this.httpClient.execute(get, context);
         HttpRequestWrapper wrapper = (HttpRequestWrapper) context.getAttribute("http.request");
         if (wrapper != null) {
             HttpGet original = (HttpGet) wrapper.getOriginal();
@@ -526,7 +527,7 @@ public class Browser {
         String mimeType = EntityUtils.getContentMimeType(entity);
         String charset = EntityUtils.getContentCharSet(entity);
         if (mimeType == null || mimeType.contains("text")) {
-            String firstBodyKb = new String(byts, 0, Math.min(byts.length, 1024), "ASCII");
+            String firstBodyKb = new String(byts, 0, Math.min(byts.length, 1024), StandardCharsets.US_ASCII);
             Matcher matcher = Pattern.compile("(?i)(<meta\\s*http-equiv\\s*=\\s*(\"|')content-type(\"|')\\s*content\\s*=\\s*(\"|')text/?\\w+;\\s*charset\\s*=\\s*(.*?)(\"|')\\s*/?>)", 2).matcher(firstBodyKb);
             if (matcher.find()) {
                 String foundCharset = matcher.group(5);
@@ -542,7 +543,7 @@ public class Browser {
         String result = null;
         if (charset == null || charset.equals("")) {
             try {
-                result = new String(byts, "UTF-8");
+                result = new String(byts, StandardCharsets.UTF_8);
             } catch (Exception e) {
                 result = new String(byts);
             }
@@ -640,10 +641,10 @@ public class Browser {
             for (String k : keys) {
                 httpost.addHeader(k, headers.get(k));
             }
-            httpost.setEntity((HttpEntity) s);
+            httpost.setEntity(s);
 
             HttpCoreContext context = new HttpCoreContext();
-            response = httpClient.execute((HttpUriRequest) httpost, (HttpContext) context);
+            response = httpClient.execute(httpost, context);
             HttpRequestWrapper wrapper = (HttpRequestWrapper) context.getAttribute("http.request");
             if (wrapper != null) {
                 HttpRequestBase original = (HttpRequestBase) wrapper.getOriginal();
@@ -721,9 +722,9 @@ public class Browser {
                     nvps.add(new BasicNameValuePair(s.substring(0, index), s.substring(index + 1)));
                 }
             }
-            httpost.setEntity((HttpEntity) new UrlEncodedFormEntity(nvps, getCurrentCharset()));
+            httpost.setEntity(new UrlEncodedFormEntity(nvps, getCurrentCharset()));
             HttpCoreContext context = new HttpCoreContext();
-            response = httpClient.execute((HttpUriRequest) httpost, (HttpContext) context);
+            response = httpClient.execute(httpost, context);
             HttpRequestWrapper wrapper = (HttpRequestWrapper) context.getAttribute("http.request");
             if (wrapper != null) {
                 HttpRequestBase original = (HttpRequestBase) wrapper.getOriginal();
@@ -774,10 +775,10 @@ public class Browser {
                 httpost.addHeader("Referer", link.getReferer().getUrl());
             }
             httpost.removeHeaders("Cookie2");
-            httpost.setEntity((HttpEntity) s);
+            httpost.setEntity(s);
 
             HttpCoreContext context = new HttpCoreContext();
-            response = httpClient.execute((HttpUriRequest) httpost, (HttpContext) context);
+            response = httpClient.execute(httpost, context);
             HttpRequestWrapper wrapper = (HttpRequestWrapper) context.getAttribute("http.request");
             if (wrapper != null) {
                 HttpRequestBase original = (HttpRequestBase) wrapper.getOriginal();
@@ -856,37 +857,37 @@ public class Browser {
                         }
                     }
                 }
-                httpost.setEntity((HttpEntity) new UrlEncodedFormEntity(nvps, getCurrentCharset()));
+                httpost.setEntity(new UrlEncodedFormEntity(nvps, getCurrentCharset()));
             } else {
                 MultipartEntityBuilder builder = MultipartEntityBuilder.create();
                 if (files != null && !files.isEmpty())
                     for (Map.Entry<String, File> en : files.entrySet()) {
-                        if (((File) en.getValue()).exists()) {
-                            builder.addPart(en.getKey(), (ContentBody) new FileBody(en.getValue()));
+                        if (en.getValue().exists()) {
+                            builder.addPart(en.getKey(), new FileBody(en.getValue()));
                         }
                     }
                 for (Map.Entry<String, ? extends Object> en : params.entrySet()) {
                     if (en.getValue() instanceof File) {
-                        builder.addPart(en.getKey(), (ContentBody) new FileBody((File) en.getValue()));
+                        builder.addPart(en.getKey(), new FileBody((File) en.getValue()));
                         continue;
                     }
                     if (en.getValue() instanceof byte[]) {
-                        builder.addPart(en.getKey(), (ContentBody) new ByteArrayBody((byte[]) en.getValue(), en.getKey()));
+                        builder.addPart(en.getKey(), new ByteArrayBody((byte[]) en.getValue(), en.getKey()));
                         continue;
                     }
                     if (en.getValue() instanceof String) {
-                        builder.addPart(en.getKey(), (ContentBody) new StringBody(en.getValue().toString()));
+                        builder.addPart(en.getKey(), new StringBody(en.getValue().toString()));
                         continue;
                     }
                     if (en.getValue() instanceof Collection) {
                         Collection con = (Collection) en.getValue();
                         for (Object obj : con) {
                             if (obj instanceof File) {
-                                builder.addPart(en.getKey(), (ContentBody) new FileBody((File) obj));
+                                builder.addPart(en.getKey(), new FileBody((File) obj));
                                 continue;
                             }
                             if (obj instanceof byte[]) {
-                                builder.addPart(en.getKey(), (ContentBody) new ByteArrayBody((byte[]) obj, en.getKey()));
+                                builder.addPart(en.getKey(), new ByteArrayBody((byte[]) obj, en.getKey()));
                                 continue;
                             }
                             if (obj instanceof String) {
@@ -901,7 +902,7 @@ public class Browser {
             RequestConfig requestConfig = newRequestConfig();
             httpost.setConfig(requestConfig);
             HttpCoreContext context = new HttpCoreContext();
-            response = httpClient.execute((HttpUriRequest) httpost, (HttpContext) context);
+            response = httpClient.execute(httpost, context);
             HttpRequestWrapper wrapper = (HttpRequestWrapper) context.getAttribute("http.request");
             if (wrapper != null) {
                 HttpRequestBase original = (HttpRequestBase) wrapper.getOriginal();
