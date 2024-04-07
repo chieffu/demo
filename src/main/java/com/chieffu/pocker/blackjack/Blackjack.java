@@ -16,18 +16,30 @@ public class Blackjack {
 
     private int[][] pk;
 
-    private List<Pocker> decks;
 
-    List<Stage> zStage ;
+    private static List<Stage> zStageList = initZStages();
 
+    private static Map<Integer,Stage> xStageMap = initXStages();
 
     public Blackjack(int n) {
         init(n);
-        decks = Pocker.randomPocker(n);
-        zStage = new ArrayList<>();
-        for(int i =0;i<=21;i++){
-           zStage.add(initZStage(i));
+
+    }
+
+    private static Map<Integer,Stage> initXStages() {
+        Map<Integer,Stage> xStageList = new HashMap();
+        for(int i=0;i<=21;i++){
+            xStageList.put(i,initXStage(i));
         }
+        return xStageList;
+    }
+
+    private static List<Stage>  initZStages() {
+        List<Stage>  zStageList = new ArrayList<>();
+        for(int i =0;i<=21;i++){
+           zStageList.add(initZStage(i));
+        }
+        return zStageList;
     }
 
     /**
@@ -123,7 +135,7 @@ public class Blackjack {
         return pocker.getNum() >= 10 ? 10 : pocker.getNum();
     }
 
-    public static int[] dots(List<Pocker> pockers) {
+    public static int[] dotsOfPocker(List<Pocker> pockers) {
         return dots(pockers.toArray(new Pocker[0]));
     }
 
@@ -133,6 +145,32 @@ public class Blackjack {
             return new int[]{sum, sum + 10};
         }
         return new int[]{sum};
+    }
+    public static boolean isFinalZStage(List<Integer> zCards){
+        Stage zStage = zStageList.get(0);
+        for(Integer card:zCards){
+            if(zStage.getNext()==null)return true;
+            zStage = zStage.getNext().stream().filter(s->s.getPai().equals(card)).findFirst().orElse(null);
+            if(zStage==null)return true;
+        }
+        if(zStage.getNext()!=null){
+            return false;
+        }
+        return true;
+    }
+    public static int[] dots(List<Integer> cards){
+        int sum = cards.stream().mapToInt(Integer::intValue).sum();
+        if(sum<=11 && cards.stream().anyMatch(p -> p == 1)){
+            return new int[]{sum,sum+10};
+        }
+        return new int[]{sum};
+    }
+
+    public static double getCurrentWinRate(int xCurrent,Map<Integer, Double> zRates) {
+        if(xCurrent>21)return 0;
+        double zBloom = zRates.entrySet().stream().filter(e->e.getKey()>21).map(e->e.getValue()).reduce((a,b)->a+b).get();
+        return zBloom + zRates.entrySet().stream().filter(e->e.getKey()<xCurrent).map(e->e.getValue()).reduce((a,b)->a+b).get()
+                + Optional.ofNullable(zRates.get(xCurrent)).orElse(0.0).doubleValue()*0.5;
     }
 
 
@@ -150,7 +188,7 @@ public class Blackjack {
             stage.parent = this;
             stage.dot = stage.dot();
             next.add(stage);
-            if (stage.largeDot()> 16 && stage.largeDot() <= 21 || stage.smallDot() > 16) {
+            if (stage.largeDot()> 16 && stage.largeDot() <= 21 || stage.largeDot() > 16) {
                 stage.next = null;
             } else {
                 stage.next = new LinkedList<>();
@@ -159,17 +197,27 @@ public class Blackjack {
         }
 
 
-        public Stage addXStage(Integer card,int[] pai) {
+        public Stage addXStage(Integer card) {
             if (next == null) return null;
             Stage stage = new Stage();
             stage.pai = card;
             stage.parent = this;
             stage.dot = stage.dot();
             next.add(stage);
-            if (stage.largeDot()< 12){
+            stage.next = null;
+            return stage;
+        }
+        public Stage addXStage0(Integer card) {
+            if (next == null) return null;
+            Stage stage = new Stage();
+            stage.pai = card;
+            stage.parent = this;
+            stage.dot = stage.dot();
+            next.add(stage);
+            if (stage.largeDot()<=11){
                 stage.next = new LinkedList<>();
             } else {
-                // 根据牌面计算是否要牌，整理出最佳决策数
+                stage.next = null;
             }
             return stage;
         }
@@ -215,7 +263,7 @@ public class Blackjack {
             return pai == null ? "--" : largeDot() + " \t " + getCards().stream().map(String::valueOf).collect(Collectors.joining(","));
         }
 
-        public double rate(int[] pai) {
+        public double zRate(int[] pai) {
             double result = 1.0;
             List<Integer> cards = getCards();
             int total = Arrays.stream(pai).sum();
@@ -228,9 +276,43 @@ public class Blackjack {
             if (result < 0) result = 0;
             return result;
         }
+
+        public double xRate(int[] pai) {
+            int total = Arrays.stream(pai).sum();
+            if(getRootDot()>11){
+                double result=0.0;
+                for(int zCard=1;zCard<=10;zCard++){
+                    double rz = pai[zCard]--/(double)total--;
+                    Map<Integer,Double> zRates = Blackjack.zRate(pai, zCard);
+                    Map<Integer,Double> xRates = Blackjack.getRateMap(pai,getNext());
+                    double xWin = Blackjack.xWinRate(zRates,xRates);
+                    result+=xWin*rz;
+                    pai[zCard]++;
+                }
+                return result;
+            }else{
+                double result = 1.0;
+                List<Integer> cards = getCards();
+                for (int card : cards) {
+                    result *= pai[card]-- / (double) total--;
+                }
+                double nextWin = Blackjack.getXStage(largeDot()).xRate(pai);
+                for (int card : cards) {
+                    pai[card]++;
+                }
+                if (result < 0) result = 0;
+                return result*nextWin;
+            }
+        }
+
+
     }
 
-    public Stage initZStage( int currentDot) {
+
+    public static boolean isBlackjack( List<Integer> cards ) {
+        return cards.size()==2 && cards.contains(1) && cards.contains(10);
+    }
+    private static Stage initZStage( int currentDot) {
         Stage root = new Stage();
         root.next = new LinkedList<>();
         root.dot=new int[]{currentDot};
@@ -239,8 +321,21 @@ public class Blackjack {
         addZSubStage(stages);
         return root;
     }
+    private static Stage initXStage( int currentDot) {
+        Stage root = new Stage();
+        root.next = new LinkedList<>();
+        root.dot=new int[]{currentDot};
+        Queue<Stage> stages = new LinkedList<>();
+        stages.add(root);
+        if(currentDot<=11){
+            addXStage(stages);
+        }else {
+            addXSubStage(stages);
+        }
+        return root;
+    }
 
-    private void addZSubStage(Queue<Stage> stages) {
+    private static void addZSubStage(Queue<Stage> stages) {
         while (!stages.isEmpty()) {
             Stage root = stages.poll();
             for (int i = 1; i <= 10; i++) {
@@ -252,10 +347,34 @@ public class Blackjack {
         }
     }
 
-    private void addFilterEndStage(Queue<Stage> notEndNode, List<Stage> result) {
+    private static void addXSubStage(Queue<Stage> stages) {
+        while (!stages.isEmpty()) {
+            Stage root = stages.poll();
+            for (int i = 1; i <= 10; i++) {
+                Stage stage = root.addXStage(i);
+                if (stage != null) {
+                    stages.add(stage);
+                }
+            }
+        }
+    }
+
+    private static void addXStage(Queue<Stage> stages) {
+        while (!stages.isEmpty()) {
+            Stage root = stages.poll();
+            for (int i = 1; i <= 10; i++) {
+                Stage stage = root.addXStage0(i);
+                if (stage != null) {
+                    stages.add(stage);
+                }
+            }
+        }
+    }
+
+    private static void addFilterEndStage(Queue<Stage> notEndNode, List<Stage> result) {
         while (!notEndNode.isEmpty()) {
             Stage root = notEndNode.poll();
-            if (root.getNext() == null) {
+            if (isEndStage(root)) {
                 result.add(root);
                 continue;
             }
@@ -265,32 +384,123 @@ public class Blackjack {
         }
     }
 
-    public List<Stage> getZEndStage(int current) {
+    private static boolean isEndStage(Stage root) {
+        return root.getNext() == null;
+    }
+
+    public static List<Stage> getZEndStage(int current) {
+        return getEndStage(zStageList.get(current));
+    }
+
+    private static List<Stage> getEndStage(Stage stage) {
         LinkedList<Stage> stages = new LinkedList<>();
-        stages.add(zStage.get(current));
+        stages.add(stage);
         List<Stage> result = new LinkedList<>();
         addFilterEndStage(stages, result);
         return result;
     }
 
-    public Map<Integer, Double> zRate(int[] pai,int currentDot) {
-        Map<Integer, Double> rates = new HashMap<>();
+    public static List<Stage> getXEndStage(int current) {
+        return getEndStage(xStageMap.get(current));
+    }
+
+    public static Stage getZStage(int currentDot){
+        return zStageList.get(currentDot);
+    }
+    public static Stage getXStage(int currentDot){
+        return xStageMap.get(currentDot);
+    }
+    public static Map<Integer, Double> zRate(int[] pai,Integer currentDot) {
+
         List<Stage> stages = getZEndStage(currentDot);
+        return getRateMap(pai, stages);
+
+    }
+
+    private static Map<Integer, Double> getRateMap(int[] pai, List<Stage> stages) {
+        Map<Integer, Double> rates = new HashMap<>();
         Map<Integer, List<Stage>> groups = stages.stream().collect(Collectors.groupingBy(stage -> stage.largeDot()));
-        for (int i = 17; i <= 26; i++) {
+        for (Integer i :groups.keySet()) {
             List<Stage> stages1 = groups.get(i);
             double rate = 0.0;
             for (Stage s : stages1) {
-                double r = s.rate(pai);
+                double r = s.zRate(pai);
                 // System.out.println(s + " \t " + r);
                 rate += r;
             }
-            System.out.println("current:"+currentDot+" ---------- totalDot:" + i + " --------end stage size:" + stages1.size() + "  rate: " + rate);
+            rates.put(i, rate);
+        }
+        return rates;
+    }
+
+    public static Map<Integer, Double> xRate(int[] pai,int currentDot) {
+        Map<Integer, Double> rates = new HashMap<>();
+        List<Stage> nextStages = new LinkedList<>();
+        Queue<Stage> queue = new LinkedList<>();
+        queue.add(xStageMap.get(currentDot));
+        while(!queue.isEmpty()){
+            Stage stage = queue.poll();
+            if(stage.getNext()==null)continue;
+            for (Stage n:stage.getNext()){
+                if(n.largeDot()<12){
+                    queue.add(n);
+                }else if(n.largeDot()<=21){
+                    nextStages.add(n);
+                }
+            }
+        }
+
+        Map<Integer, List<Stage>> groups = nextStages.stream().collect(Collectors.groupingBy(stage -> stage.largeDot()));
+        for (int i = 12; i <= 21; i++) {
+            List<Stage> stages1 = groups.get(i);
+            double rate = 0.0;
+            for (Stage s : stages1) {
+                double r = s.zRate(pai);
+                // System.out.println(s + " \t " + r);
+                rate += r;
+            }
+          //  System.out.println("current:"+currentDot+" ---------- totalDot:" + i + " --------end stage size:" + stages1.size() + "  rate: " + rate);
             rates.put(i, rate);
         }
         return rates;
 
     }
+
+
+
+    public static double getNextWinRate(List<Integer> xCards, int[] pai, Map<Integer, Double> zRates) {
+
+        int[] dots = dots(xCards);
+        int dot = dots[dots.length - 1];
+        Map<Integer, Double> xRates = xRate(pai, dot);
+        return xWinRate(zRates, xRates);
+    }
+
+    private static double xWinRate(Map<Integer, Double> zRates, Map<Integer, Double> xRates) {
+        double nextWinRate = 0;
+        double zBloom = zRates.entrySet().stream().filter(e -> e.getKey()>21).map(Map.Entry::getValue).reduce(0.0, (a, b) -> a + b);
+        double xBloom = xRates.entrySet().stream().filter(e -> e.getKey()>21).map(Map.Entry::getValue).reduce(0.0, (a, b) -> a + b);
+
+        for (int k = 17; k <= 21; k++) {
+            Double xRate = xRates.get(k);
+            if(xRate==null){
+                continue;
+            }
+            for (int j = 17; j <= k; j++) {
+                double zRate = zRates.get(j);
+                if (k == j) {
+                    nextWinRate += xRate * zRate / 2;//和了算赢了一半
+                } else {
+                    nextWinRate += xRate * zRate;
+                }
+            }
+
+        }
+        return (1-xBloom)*zBloom+nextWinRate;
+    }
+
+
+
 
     private void init(int n) {
         pai = new int[11];
@@ -310,7 +520,7 @@ public class Blackjack {
      * 计算剩余牌数
      */
     private int countPai() {
-        return Arrays.stream(pai).sum();
+        return countPai(pai);
     }
 
     /**
@@ -319,6 +529,9 @@ public class Blackjack {
     public int countPai(int dot) {
         if (dot <= 0 || dot > 11) return 0;
         return pai[dot == 11 ? 1 : dot];
+    }
+    public static int countPai(int[] pai) {
+        return Arrays.stream(pai).sum();
     }
 
     /**
@@ -621,14 +834,14 @@ public class Blackjack {
 
         List<Stage> stages = getZEndStage(0);
         Map<Integer, List<Stage>> groups = stages.stream().filter(s -> s.largeDot() > 21).collect(Collectors.groupingBy(s -> s.getCards().size()));
-        double rate3 = Optional.ofNullable(groups.get(3)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate4 = Optional.ofNullable(groups.get(4)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate5 = Optional.ofNullable(groups.get(5)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate6 = Optional.ofNullable(groups.get(6)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate7 = Optional.ofNullable(groups.get(7)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate8 = Optional.ofNullable(groups.get(8)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate9 = Optional.ofNullable(groups.get(9)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
-        double rate10 = Optional.ofNullable(groups.get(10)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.rate(pai)).sum();
+        double rate3 = Optional.ofNullable(groups.get(3)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate4 = Optional.ofNullable(groups.get(4)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate5 = Optional.ofNullable(groups.get(5)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate6 = Optional.ofNullable(groups.get(6)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate7 = Optional.ofNullable(groups.get(7)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate8 = Optional.ofNullable(groups.get(8)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate9 = Optional.ofNullable(groups.get(9)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
+        double rate10 = Optional.ofNullable(groups.get(10)).orElse(Collections.emptyList()).stream().mapToDouble(s -> s.zRate(pai)).sum();
 
         return rate3 * bloom3Odds + rate4 * bloom4Odds + rate5 * bloom5Odds + rate6 * bloom6Odds + rate7 * bloom7Odds + (rate8 + rate9 + rate10) * bloom8Odds;
 
@@ -739,15 +952,18 @@ public class Blackjack {
         return sum;
     }
 
-    public double rXBloom(int threshold) {
-        int bloomCard = 22 - threshold;
-        List<List<Integer>> bagI = bags.get(threshold - 1);
-        double rates = 0.0;
-        for (List<Integer> bag : bagI) {
-            Map<Integer, Integer> groups = groups(bag);
-            //TODO
-        }
-        return rates;
+    /**
+     * 闲家赢的期望 BJ 1.5赔率 ，其他按 1 陪，和 0 陪。
+     * @return
+     */
+     public double xWinExpectation(){
+         double rate = getXEndStage(0).stream().map(s->s.xRate(pai)).reduce((a, b) -> a + b).get();
+         return rate * 2 +  rBjWin() * 1.25 ;
+     }
+
+    public static double xWinRate(int current,int[] pai) {
+        double rate = getXEndStage(current).stream().map(s->s.xRate(pai)).reduce((a, b) -> a + b).get();
+        return rate * 2 ;
     }
 
     public double rBjWin() {
@@ -817,6 +1033,7 @@ public class Blackjack {
         log.info("烫三手 ： {} ", blackjack.hotThreeExpectation(100, 20, 4, 2, 1));
         log.info("幸运女皇 ： {} ", blackjack.luckyQueenExpectation(1000, 125, 19, 9, 4));
         log.info(" 庄爆： {} ", blackjack.bloomExpectation(1, 2, 9, 50, 100,250));
+        log.info(" 闲赢： {} ", blackjack.xWinExpectation());
     }
 
     public static void main(String[] args) {
