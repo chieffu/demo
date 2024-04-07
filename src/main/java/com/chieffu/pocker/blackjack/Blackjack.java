@@ -168,9 +168,9 @@ public class Blackjack {
 
     public static double getCurrentWinRate(int xCurrent,Map<Integer, Double> zRates) {
         if(xCurrent>21)return 0;
-        double zBloom = zRates.entrySet().stream().filter(e->e.getKey()>21).map(e->e.getValue()).reduce((a,b)->a+b).get();
-        return zBloom + zRates.entrySet().stream().filter(e->e.getKey()<xCurrent).map(e->e.getValue()).reduce((a,b)->a+b).get()
-                + Optional.ofNullable(zRates.get(xCurrent)).orElse(0.0).doubleValue()*0.5;
+        double zBloom = zRates.entrySet().stream().filter(e->e.getKey()>21).map(e->e.getValue()).reduce((a,b)->a+b).orElse(0.0);
+        return zBloom + zRates.entrySet().stream().filter(e->e.getKey()<xCurrent).map(e->e.getValue()).reduce((a,b)->a+b).orElse(0.0)
+                + Optional.ofNullable(zRates.get(xCurrent)).orElse(0.0).doubleValue()*0.5; //持平的话回本
     }
 
 
@@ -284,9 +284,10 @@ public class Blackjack {
                 for(int zCard=1;zCard<=10;zCard++){
                     double rz = pai[zCard]--/(double)total--;
                     Map<Integer,Double> zRates = Blackjack.zRate(pai, zCard);
+                    double currentWinRate =  Blackjack.getCurrentWinRate( dot[dot.length-1],  zRates);
                     Map<Integer,Double> xRates = Blackjack.getRateMap(pai,getNext());
                     double xWin = Blackjack.xWinRate(zRates,xRates);
-                    result+=xWin*rz;
+                    result+=Math.max(xWin,currentWinRate)*rz;
                     pai[zCard]++;
                 }
                 return result;
