@@ -59,8 +59,12 @@
             <!-- 注意替换为你需要的版本号 -->
             <version>1.2.83</version>
         </dependency>
-
-
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
+        </dependency>
 
 
     </dependencies>

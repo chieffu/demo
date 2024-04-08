@@ -2,10 +2,11 @@ package com.chieffu.pocker;
 
 public enum SuitEnum {
 
-        SPADE(0,"黑桃"),
-        HEART(1,"红桃"),
-        CLUB(2,"梅花"),
-        DIAMOND(3,"方块");
+        SPADE(0,"♠"),
+        HEART(1,"❤"),
+        CLUB(2, "♣"),
+        DIAMOND(3,"♦");
+
 
         // 每个枚举常量对应一个字符串描述
         private final String description;

@@ -15,9 +15,7 @@ public class Pocker {
     private int num;
 
     public static Pocker getPocker(int card) {
-        if (card == 255)
-            return null;
-        return standard.get(card);
+        return standard.get(card%standard.size());
     }
 
 
@@ -34,20 +32,22 @@ public class Pocker {
         String msg = suit.getDescription();
         switch (this.num) {
             case 1:
-                msg = msg + "A";
+                msg = "A"+msg  ;
                 return msg;
             case 11:
-                msg = msg + "J";
+                msg = "J"+msg ;
                 return msg;
             case 12:
-                msg = msg + "Q";
+                msg = "Q"+msg  ;
                 return msg;
             case 13:
-                msg = msg + "K";
+                msg = "K"+msg ;
+                return msg;
+            default:
+                msg =  this.num+msg ;
                 return msg;
         }
-        msg = msg + this.num;
-        return msg;
+
     }
 
     private static List<Pocker> initPork() {

@@ -2,9 +2,6 @@ package com.chieffu.pocker.blackjack;
 
 import lombok.Getter;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 @Getter
 public class Bj {
 //    @Getter
@@ -137,7 +134,7 @@ public class Bj {
         Blackjack bj = new Blackjack(8);
         long start = System.currentTimeMillis();
         int[] pai =bj.getPai();
-        bj.zRate(pai,0);
+        Stage.zRate(pai,0);
         long end = System.currentTimeMillis();
         System.out.println("spend time :"+ (end-start)+" ms");
     }
