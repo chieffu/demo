@@ -1,0 +1,27 @@
+<configuration>
+
+    <!-- 定义日志文件的输出位置及名称 -->
+    <property name="LOG_FILE_PATH" value="logs/app.log" />
+
+    <!-- 定义日志文件的基本配置 -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${LOG_FILE_PATH}</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 定义控制台输出的基本配置 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 设置默认的日志级别 -->
+    <root level="info">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+</configuration>
