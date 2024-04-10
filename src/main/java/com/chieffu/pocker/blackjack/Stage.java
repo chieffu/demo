@@ -1,6 +1,7 @@
 package com.chieffu.pocker.blackjack;
 
 import com.chieffu.pocker.util.LRUCache;
+import com.chieffu.pocker.util.ThreadSafeLRUCache;
 import lombok.Getter;
 
 import java.util.*;
@@ -8,7 +9,7 @@ import java.util.stream.Collectors;
 
 @Getter
 public class Stage {
-    private static final LRUCache<String, Map<Integer, Double>> zRateCache = new LRUCache<String, Map<Integer, Double>>(2000000);
+    private static final ThreadSafeLRUCache<String, Map<Integer, Double>> zRateCache = new ThreadSafeLRUCache<String, Map<Integer, Double>>(2000000);
     private static final Stage xStage = initXStage(0);
     private static final List<Stage> zStageList = initZStages();
     private Stage parent;
@@ -171,8 +172,9 @@ public class Stage {
 
     public static Map<Integer, Double> zRate(int[] pai, Integer currentDot) {
         String key = Arrays.toString(pai) + currentDot;
-        if (zRateCache.containsKey(key)) {
-            return zRateCache.get(key);
+        Map<Integer, Double> cache = zRateCache.get(key);
+        if (cache!=null) {
+            return cache;
         }
         List<Stage> stages = getZEndStage(currentDot);
         Map<Integer, Double> rates = new HashMap<>();

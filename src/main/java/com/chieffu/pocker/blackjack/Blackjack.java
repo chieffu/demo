@@ -87,14 +87,6 @@ public class Blackjack {
     }
 
     /**
-     * 计算点数为dot的牌的张牌
-     */
-    public static int countPai(int[] pai, int dot) {
-        if (dot <= 0 || dot > 11) return 0;
-        return pai[dot == 11 ? 1 : dot];
-    }
-
-    /**
      * 返回背包中各个元素出现的次数。
      *
      * @param bag 包含整数元素的列表。
@@ -109,6 +101,12 @@ public class Blackjack {
         return result;
     }
 
+    /**
+     * 计算点数。
+     *
+     * @param pocker 扑克牌对象。
+     * @return 扑克牌的点数。
+     */
     public static int dot(Pocker pocker) {
         return pocker.getNum() >= 10 ? 10 : pocker.getNum();
     }
@@ -125,9 +123,9 @@ public class Blackjack {
         return new int[]{sum};
     }
 
-    public static int[] dots(List<Integer> cards){
-        int sum = cards.stream().mapToInt(Integer::intValue).sum();
-        if(sum<=11 && cards.stream().anyMatch(p -> p == 1)){
+    public static int[] dots(List<Integer> dots){
+        int sum = dots.stream().mapToInt(Integer::intValue).sum();
+        if(sum<=11 && dots.stream().anyMatch(p -> p == 1)){
             return new int[]{sum,sum+10};
         }
         return new int[]{sum};
@@ -439,7 +437,7 @@ public class Blackjack {
     }
 
     /**
-     * 幸运女皇函数
+     * 幸运女皇
      * 这个函数用于计算某种游戏或赌博中的赢利概率，考虑了多种不同的情况。
      *
      * @param luckyQueenWithBjOdds 与黑杰克一起出现的幸运女皇的概率。
@@ -620,7 +618,7 @@ public class Blackjack {
      *
      * @param pks
      */
-    public void removePocker(List<Pocker> pks) {
+    public void removePocker(List<Pocker> pks) throws NotFoundException {
         for (Pocker p : pks) {
             removePocker(p);
         }
@@ -631,18 +629,27 @@ public class Blackjack {
      *
      * @param p
      */
-    public void removePocker(Pocker p) {
+    public void removePocker(Pocker p) throws NotFoundException {
         if (p != null) {
             int dot = dot(p);
             if (pai[dot] <= 0) {
-                throw new RuntimeException("扑克牌" + p + "多了");
+                throw new NotFoundException("扑克牌" + p + "多了");
             }
             pai[dot]--;
-            if (pk[p.getSuit().getHuaSe()][p.getNum() - 1] <= 0) {
-                throw new RuntimeException("扑克牌" + p + "多了");
+
+            if (pk[p.getSuit().getHuaSe()-1][p.getNum() - 1] <= 0) {
+                throw new NotFoundException("扑克牌" + p + "多了");
             }
-            pk[p.getSuit().getHuaSe()][p.getNum() - 1]--;
+            pk[p.getSuit().getHuaSe()-1][p.getNum() - 1]--;
         }
+    }
+
+    public Map<Pocker,Integer> getRemainingPocker(){
+        Map<Pocker,Integer> remaining = new LinkedHashMap<>();
+        for(Pocker p:Pocker.getStandardPork()){
+            remaining.put(p,pk[p.getSuit().getHuaSe()-1][p.getNum() - 1]);
+        }
+        return remaining;
     }
 
 

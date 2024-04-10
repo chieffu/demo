@@ -64,7 +64,7 @@ public class MockBlackjack {
     }
 
 
-    private static void mockCommon(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context commonContext, List<Pocker> pks) {
+    private static void mockCommon(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context commonContext, List<Pocker> pks) throws NotFoundException {
         double xWin = blackjack.xWinExpectation();
         double luckyQueue = blackjack.luckyQueenExpectation(1000, 125, 19, 9, 4);
         double hotThree = blackjack.hotThreeExpectation(100, 20, 4, 2, 1);
@@ -282,7 +282,7 @@ public class MockBlackjack {
     }
 
 
-    private static Context mock(int shift, Blackjack bj) {
+    private static Context mock(int shift, Blackjack bj) throws NotFoundException {
         List<Pocker> pks = Pocker.randomPocker(8);
         Blackjack blackjack = new Blackjack(pks.size() / 52);
         int round = 0;
@@ -294,7 +294,7 @@ public class MockBlackjack {
         Context hotThreeContext = new Context("烫三手");
         Context commonContext = new Context("底注");
         Context bloomContext = new Context("庄爆");
-        while (pks.size() > StringUtils.newRandomInt(80, 120)) {
+        while (pks.size() > StringUtils.newRandomInt(10, 20)) {
             round++;
 
             px.add(pks.remove(pks.size() - 1));
