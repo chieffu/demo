@@ -25,8 +25,14 @@ public class BjController {
     }
 
     @GetMapping("/table/{tableId}/{roundId}")
-    public BjRound getRound(@PathVariable("tableId")String tableId,@PathVariable("roundId")String roundId ) throws NotFoundException {
-        return service.getBjRound(tableId,roundId);
+    public BjRoundVO getRound(@PathVariable("tableId")String tableId,@PathVariable("roundId")String roundId ) throws NotFoundException {
+        BjRoundVO vo = new BjRoundVO();
+        BjRound round = service.getBjRound(tableId,roundId);
+        vo.setRoundId(round.getRoundId());
+        vo.setTableId(tableId);
+        vo.setBanker(round.getBanker().stream().map(Pocker::toString).collect(Collectors.toList()));
+        vo.setPlayers(round.getPlayers().stream().map(p->p.stream().map(Pocker::toString).collect(Collectors.toList())).collect(Collectors.toList()));
+        return vo;
     }
     /**
      * 查询当前赢的概率
@@ -59,7 +65,7 @@ public class BjController {
      * @return
      */
     @PutMapping("/table/{tableId}/remove-cards")
-    public Map<Pocker,Integer> removeCards(@PathVariable("tableId") String tableId,@RequestBody List<Integer> cards) throws NotFoundException {
+    public Map<String,Integer> removeCards(@PathVariable("tableId") String tableId,@RequestBody List<Integer> cards) throws NotFoundException {
         log.info("remove cards of table[{}]  : {}",tableId,cards);
         BjTable table = service.getTable(tableId);
         Blackjack blackjack = table.getBlackjack();
@@ -67,7 +73,16 @@ public class BjController {
             Pocker p = Pocker.fromCard(card);
             blackjack.removePocker(p);
         }
-        return blackjack.getRemainingPocker();
+        Map<String, Integer> remainingPockerAsStrings = blackjack.getRemainingPocker()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().toString(),
+                        Map.Entry::getValue
+                ));
+
+        return remainingPockerAsStrings;
+
     }
 
     /**
@@ -75,12 +90,20 @@ public class BjController {
      * @return
      */
     @PutMapping("/table/{tableId}/update-cards")
-    public Map<Pocker,Integer> updateCards(@PathVariable("tableId") String tableId,@RequestBody BjRoundDTO roundDTO) throws NotFoundException {
+    public Map<String,Integer> updateCards(@PathVariable("tableId") String tableId,@RequestBody BjRoundDTO roundDTO) throws NotFoundException {
         log.info("update cards of table[{}]  : {}",tableId,roundDTO);
         BjTable table = service.getTable(tableId);
         Blackjack blackjack = table.getBlackjack();
         service.updateCards(tableId,roundDTO.getRoundId(),roundDTO.getBankCards(),roundDTO.getPlaysCards());
-        return blackjack.getRemainingPocker();
+        Map<String, Integer> remainingPockerAsStrings = blackjack.getRemainingPocker()
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey().toString(),
+                        Map.Entry::getValue
+                ));
+
+        return remainingPockerAsStrings;
     }
 
     /**
