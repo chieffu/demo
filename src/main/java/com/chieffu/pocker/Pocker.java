@@ -70,6 +70,7 @@ public class Pocker {
             list.addAll(list0);
         Random rd = new Random();
         Collections.shuffle(list, rd);
+        Collections.shuffle(list, rd);
         return new LinkedList<>(list);
     }
 }

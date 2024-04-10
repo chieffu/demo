@@ -452,13 +452,13 @@ public class Blackjack {
     public double luckyQueenExpectation(double luckyQueenWithBjOdds, double luckyQueenOdds, double purePairOdds, double OddsPure20, double odds20) {
         long purePairQueue = c(pk[1][11], 2);
         int countPai = countPai();
-        double luckyQueenWithBj = 1.0 * c(countPai(1), 1) * c(countPai(10) - 2, 1) / 2 * purePairQueue / c(countPai, 4);
+        double luckyQueenWithBj = 1.0 * c(countPai(1), 1) * c(countPai(10) -2, 1) / 2 * purePairQueue / c(countPai, 4);
         double luckyQueen = 1.0 * purePairQueue / c(countPai, 2);
         double purePair = checkPurePair();
         double pureP2_20 = checkFlush20Of2Rate();
         double p2_20 = p2(20);
 
-        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair - luckyQueen) + (OddsPure20 + 1) * pureP2_20 + (odds20 + 1) * (p2_20 - pureP2_20);
+        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair - luckyQueen) + (OddsPure20 + 1) * (pureP2_20-luckyQueen) + (odds20 + 1) * (p2_20 - pureP2_20-luckyQueen);
     }
 
 
@@ -507,7 +507,7 @@ public class Blackjack {
                 flush21 += r;
             }
         }
-        return flush21 * 1.0 / c(countPai(), 3);
+        return flush21  /(double) c(countPai(), 3);
     }
 
     /**
@@ -516,23 +516,20 @@ public class Blackjack {
      * @return
      */
     public double checkFlush20Of2Rate() {
-        List<List<Integer>> bag21 = bags.get(20 - 1).stream().filter(l -> l.size() == 2).collect(Collectors.toList());
-        long flush21 = 0;
+        List<List<Integer>> bag20 = bags.get(20 - 1).stream().filter(l -> l.size() == 2).collect(Collectors.toList());
+        long flush20 = 0;
         for (int i = 0; i < 4; i++) {
-            for (List<Integer> bag : bag21) {
+            for (List<Integer> bag : bag20) {
                 Map<Integer, Integer> groups = groups(bag);
                 long r = 1;
                 for (Integer k : groups.keySet()) {
                     int countK = countPai(i, k);
-                    if (k == 11 && groups.containsKey(1) && r != 0)
-                        r = r / c(countK, groups.get(1)) * c(countK, groups.get(k) + groups.get(1));
-                    else
-                        r *= c(countK, groups.get(k));
+                    r *= c(countK, groups.get(k));
                 }
-                flush21 += r;
+                flush20 += r;
             }
         }
-        return flush21 * 1.0 / c(countPai(), 2);
+        return flush20  / (double)c(countPai(), 2);
     }
 
     /**

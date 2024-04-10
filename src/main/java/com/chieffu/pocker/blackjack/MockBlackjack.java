@@ -2,14 +2,15 @@ package com.chieffu.pocker.blackjack;
 
 import com.chieffu.pocker.Pocker;
 import com.chieffu.pocker.SuitEnum;
-import com.chieffu.pocker.blackjack.Blackjack;
-import com.chieffu.pocker.blackjack.Stage;
 import com.chieffu.pocker.util.ConfigUtil;
 import com.chieffu.pocker.util.StringUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -86,19 +87,30 @@ public class MockBlackjack {
             Map<Integer, Double> zRates = Stage.zRate(blackjack.getPai(), pz.get(0).getNum());
 
             double currentWinRate = Stage.getCurrentWinRate(dot[dot.length - 1], zRates);
+           if(printLog) log.info("当前 【 {} 】,赢面为{}",dot[dot.length-1],String.format("%.3f",currentWinRate));
             Stage xStage = Stage.getXStage(xCards);
             double oneMoreCardWinRate = xStage==null?0:Stage.xWinRate(zRates, xStage.oneMoreCardRateMap(blackjack.getPai()));
-
+            if(printLog) log.info("加一张牌赢面为{}",String.format("%.3f",oneMoreCardWinRate));
+            int doubleBet = 1;
+            if(oneMoreCardWinRate>0.5 && oneMoreCardWinRate>currentWinRate){
+                log.info("加倍下注");
+                doubleBet = 2;
+            }
             while (currentWinRate < oneMoreCardWinRate) {
                 Pocker remove = pks.remove(pks.size() - 1);
                 px.add(remove);
                 blackjack.removePocker(remove);
                 xCards = px.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
                 dot = Blackjack.dots(xCards);
+                zRates = Stage.zRate(blackjack.getPai(), pz.get(0).getNum());
                 currentWinRate = Stage.getCurrentWinRate(dot[dot.length - 1], zRates);
                 xStage = Stage.getXStage(xCards);
-                oneMoreCardWinRate = xStage==null?0:Stage.xWinRate(zRates, xStage.oneMoreCardRateMap(blackjack.getPai()));
-            }
+                oneMoreCardWinRate = xStage == null ? 0 : Stage.xWinRate(zRates, xStage.oneMoreCardRateMap(blackjack.getPai()));
+                if(printLog) log.info("当前 【 {} 】,赢面为{}",dot[dot.length-1],String.format("%.3f",currentWinRate));
+                if(doubleBet==2)break;
+                if(printLog) log.info("加一张牌赢面为{}",String.format("%.3f",oneMoreCardWinRate));
+
+           }
 
             List<Integer> zCards = pz.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
             blackjack.removePocker(pz.get(1));
@@ -128,6 +140,7 @@ public class MockBlackjack {
                     r = -1;
                 }
             }
+            r = r*doubleBet;
             commonContext.addResult(r);
             commonContext.addCount();
             if(printLog) log.info("{}靴{}把压{} 期望：{}  结果 {}  当前 max:{}  min:{}  result:{}  庄：{} - 闲：{} ", shift, round, commonContext.getName(), String.format("%.3f",xWin), r,commonContext.getMaxWin(),commonContext.getMinWin(),r, pz, px);
@@ -281,7 +294,6 @@ public class MockBlackjack {
         Context hotThreeContext = new Context("烫三手");
         Context commonContext = new Context("底注");
         Context bloomContext = new Context("庄爆");
-        List<Context> contexts = Arrays.asList(luckyQueueContext, pairContext, luckyThreeContext, hotThreeContext, commonContext);
         while (pks.size() > StringUtils.newRandomInt(80, 120)) {
             round++;
 
@@ -290,10 +302,10 @@ public class MockBlackjack {
             pz.add(pks.remove(pks.size() - 1));
             pz.add(pks.remove(pks.size() - 1));
 
-            mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
-            mockPair(shift, round, blackjack, px, px, pairContext);
-            mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
-            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
+//            mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
+//            mockPair(shift, round, blackjack, px, px, pairContext);
+//            mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
+//            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
 
             mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
 //            mockBloom(shift, round, blackjack, pz, px, bloomContext);
@@ -327,9 +339,8 @@ public class MockBlackjack {
             pairQ= Double.parseDouble(ConfigUtil.getSetting("mock.pair.q", "1.1"));
             luckyQueueQ = Double.parseDouble(ConfigUtil.getSetting("mock.luckyQueue.q", "1.1"));
             times = Integer.parseInt(ConfigUtil.getSetting("mock.times", "20"));
-
             Context c0 = new Context("total");
-            for (int i = 1; i <= 1000; i++) {
+            for (int i = 1; i <= 100; i++) {
                 Blackjack bj = new Blackjack(8);
                 Context c = mock(i, bj);
                 log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), c.getMaxWin(), c.getMinWin(), c.getResult());
