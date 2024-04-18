@@ -31,7 +31,7 @@ public class Pocker implements Serializable {
      * @return
      */
     public static Pocker fromCard(Integer n) {
-        return new Pocker(n/100, n%13);
+        return new Pocker(n/100, (n%100)%14);
     }
 
     public int getBaccaratDot() {

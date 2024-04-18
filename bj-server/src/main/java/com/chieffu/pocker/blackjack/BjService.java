@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class BjService {
     ThreadSafeLRUCache<String, BjTable> tables = new ThreadSafeLRUCache<>(10000);
 
-    public BjTable getTable(String tableId) {
+     public BjTable getTable(String tableId) {
         BjTable table=tables.get(tableId);
        return table!=null?table:createTable(tableId);
     }
@@ -29,6 +29,14 @@ public class BjService {
         return table.getBjRound(roundId);
     }
 
+    public void pushGameStatus(String tableId, Integer roundNum, String roundId,Integer status){
+        BjTable table = tables.get(tableId);
+        if(table!=null){
+            table.updateStatus(roundNum,roundId,status);
+        }
+
+    }
+
     /**
      * 更新牌
      * @param tableId
@@ -38,11 +46,13 @@ public class BjService {
      * @throws NotFoundException
      */
     public void updateCards(String tableId, String roundId, List<Integer> bankCards, List<List<Integer>> playsCards) throws NotFoundException {
-        List<Pocker> bankPockerList = bankCards.stream().map(n->Pocker.fromCard(n)).collect(Collectors.toList());
-        List<List<Pocker>> playerPockerLists = playsCards.stream().map(l->l.stream().map(n-> Pocker.fromCard(n)).collect(Collectors.toList())).collect(Collectors.toList());
+        List<Pocker> bankPockerList = bankCards.stream().filter(n->n>0).map(n->Pocker.fromCard(n)).collect(Collectors.toList());
+        List<List<Pocker>> playerPockerLists = playsCards.stream().map(l->l.stream().filter(n->n>0).map(n-> Pocker.fromCard(n)).collect(Collectors.toList())).collect(Collectors.toList());
+        if(bankCards.size()==0&&playerPockerLists.stream().flatMap(l->l.stream()).count()==0){
+            return;
+        }
         getTable(tableId).updateCards(roundId, bankPockerList, playerPockerLists);
     }
-
 
 
 }

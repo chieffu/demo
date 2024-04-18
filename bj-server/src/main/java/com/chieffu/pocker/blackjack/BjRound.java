@@ -9,6 +9,9 @@ import java.util.List;
 @Data
 public class BjRound {
 
+    private String tableId;
+
+    private Integer shoeNum;
     private String roundId;
 
     private List<List<Pocker>> players = new ArrayList<>();

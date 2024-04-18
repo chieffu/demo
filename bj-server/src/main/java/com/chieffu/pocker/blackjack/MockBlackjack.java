@@ -255,8 +255,8 @@ public class MockBlackjack {
             if (px.get(0).equals(px.get(1))) {
                 Pocker pocker = px.get(0);
                 if (pocker.getSuit().equals(SuitEnum.HEART) && pocker.getNum() == 12) {
-                    int[] zz = Blackjack.dotsOfPocker(pz);
-                    if (zz[zz.length - 1] == 21 && pz.size()==2) {
+                    int[] zz = Blackjack.dots(pz.get(0),pz.get(1));
+                    if (zz[zz.length - 1] == 21 ) {
                         r=1000;
                     } else {
                         r=125;
@@ -304,13 +304,17 @@ public class MockBlackjack {
             pz.add(pks.remove(pks.size() - 1));
 
             mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
-            mockPair(shift, round, blackjack, px, px, pairContext);
+
+            //            mockPair(shift, round, blackjack, px, px, pairContext);
             mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
-            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
+//            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
 
 //            mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
 //            mockBloom(shift, round, blackjack, pz, px, bloomContext);
-
+            int removeCards = StringUtils.newRandomInt(0,5);
+            for(int i=0;i<removeCards;i++){
+                px.add(pks.remove(pks.size()-1));
+            }
             blackjack.removePocker(px);
             blackjack.removePocker(pz);
 
@@ -341,7 +345,7 @@ public class MockBlackjack {
             luckyQueueQ = Double.parseDouble(ConfigUtil.getSetting("mock.luckyQueue.q", "1.1"));
             times = Integer.parseInt(ConfigUtil.getSetting("mock.times", "20"));
             Context c0 = new Context("total");
-            for (int i = 1; i <= 100; i++) {
+            for (int i = 1; i <= 10000; i++) {
                 Blackjack bj = new Blackjack(8);
                 Context c = mock(i, bj);
                 log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), c.getMaxWin(), c.getMinWin(), c.getResult());
@@ -349,6 +353,7 @@ public class MockBlackjack {
                 log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), c0.getMaxWin(), c0.getMinWin(), c0.getResult());
             }
            //bjhui24 huihui2403   2.tt
+            //laoxiao qq8896946  ybtyjt.com
         } catch (Exception e) {
             log.error(e.getLocalizedMessage(), e);
         }
