@@ -42,15 +42,15 @@ public class BjController {
     public Map<BjTypeEnum,String> queryOdds(@PathVariable("tableId")String tableId){
         BjTable bjTable = service.getTable(tableId);
 
-        double luckyQueenExpectation = bjTable.getBlackjack().luckyQueenExpectation(1000, 125, 19, 9, 4);
-        double hotThree = bjTable.getBlackjack().hotThreeExpectation(100, 20, 4, 2, 1);
-        double luckyThree = bjTable.getBlackjack().luckThreeExpectation(100, 40, 30, 10, 5);
-        double pair = bjTable.getBlackjack().pairExpectation(25, 8);
-        double base = bjTable.getBlackjack().xWinExpectation();
-        double bloom = bjTable.getBlackjack().bloomExpectation(1, 2, 9, 50, 100, 250);
+        double luckyQueen = bjTable.getBlackjack().expLuckyQueen(1000, 125, 19, 9, 4);
+        double hotThree = bjTable.getBlackjack().expHotThree(100, 20, 4, 2, 1);
+        double luckyThree = bjTable.getBlackjack().expLuckThree(100, 40, 30, 10, 5);
+        double pair = bjTable.getBlackjack().expPair(25, 8);
+        double base = bjTable.getBlackjack().expXWin();
+        double bloom = bjTable.getBlackjack().expBloom(1, 2, 9, 50, 100, 250);
         Map<BjTypeEnum,String> result = new HashMap<>();
 
-        result.put(BjTypeEnum.LUCKY_QUEEN,String.format("%.4f",luckyQueenExpectation));
+        result.put(BjTypeEnum.LUCKY_QUEEN,String.format("%.4f",luckyQueen));
         result.put(BjTypeEnum.HOT_THREE,String.format("%.4f",hotThree));
         result.put(BjTypeEnum.LUCKY_THREE,String.format("%.4f",luckyThree));
         result.put(BjTypeEnum.PAIR,String.format("%.4f",pair));

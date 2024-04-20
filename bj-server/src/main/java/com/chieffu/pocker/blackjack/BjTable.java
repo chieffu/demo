@@ -10,13 +10,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Getter
 public class BjTable {
 
-    private String tableId ;
+    private final String tableId ;
     /**
      * 当前牌局
      */
     private BjShoe currentShoe;
 
-    private AtomicInteger currentRoundNum = new AtomicInteger(1);
+    private final AtomicInteger currentRoundNum = new AtomicInteger(1);
 
     private Integer status;// 101 结束下注
 

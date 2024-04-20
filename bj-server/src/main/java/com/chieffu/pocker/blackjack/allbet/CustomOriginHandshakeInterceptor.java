@@ -17,7 +17,7 @@ public class CustomOriginHandshakeInterceptor implements HandshakeInterceptor {
             response.getHeaders().add("Access-Control-Allow-Origin", originHeader);
             return true; // 允许握手
         } else {
-            return false; // 拒绝握手
+            return true; // 拒绝握手
         }
     }
 
@@ -29,12 +29,7 @@ public class CustomOriginHandshakeInterceptor implements HandshakeInterceptor {
     private boolean isAllowedOrigin(String originHeader) {
         // 根据您的需求判断originHeader是否被允许
         // 示例：允许来自特定Chrome扩展程序的连接
-        return originHeader.startsWith("chrome-extension://") && isSpecificExtensionId(originHeader);
+        return originHeader.startsWith("chrome-extension://") ;
     }
 
-    private boolean isSpecificExtensionId(String originHeader) {
-        // 根据您的需求判断originHeader是否对应特定的Chrome扩展程序ID
-        // 示例：允许特定扩展程序ID
-        return originHeader.equals("chrome-extension://afkfkebgdmakidlaedakaohkllfamnfe");
-    }
 }

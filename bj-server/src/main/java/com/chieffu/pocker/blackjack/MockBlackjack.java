@@ -1,10 +1,10 @@
 package com.chieffu.pocker.blackjack;
 
+import com.chieffu.pocker.Ma;
 import com.chieffu.pocker.Pocker;
 import com.chieffu.pocker.SuitEnum;
 import com.chieffu.pocker.util.ConfigUtil;
 import com.chieffu.pocker.util.StringUtils;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -23,53 +23,14 @@ public class MockBlackjack {
     private static double pairQ = 1.1;
     private static double luckyThreeQ=1.1;
     private static double hotThreeQ = 1.1;
-    @Data
-    static class Context {
-        String name;
-
-        Context(String name) {
-            this.name = name;
-        }
-
-        double count = 0;
-        double result = 0;
-        double maxWin = 0.0;
-        double minWin = 0.0;
-
-        void addCount() {
-            count++;
-        }
-
-        void addCount(double count) {
-            this.count += count;
-        }
-
-        void addResult(double d) {
-            result += d;
-            if (maxWin < result) {
-                maxWin = result;
-            }
-            if (minWin > result) {
-                minWin = result;
-            }
-        }
-        public void merge(Context c){
-            this.addResult(c.getResult());
-            this.addCount(c.getCount());
-        }
-        public void merge(Context c,int times){
-            this.addResult(c.getResult()*times);
-            this.addCount(c.getCount()*times);
-        }
-    }
 
 
-    private static void mockCommon(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context commonContext, List<Pocker> pks) throws NotFoundException {
-        double xWin = blackjack.xWinExpectation();
-        double luckyQueue = blackjack.luckyQueenExpectation(1000, 125, 19, 9, 4);
-        double hotThree = blackjack.hotThreeExpectation(100, 20, 4, 2, 1);
-        double luckyThree = blackjack.luckThreeExpectation(100, 40, 30, 10, 5);
-        double pair = blackjack.pairExpectation(25, 8);
+    private static void mockCommon(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext commonContext, List<Pocker> pks) throws NotFoundException {
+        double xWin = blackjack.expXWin();
+        double luckyQueue = blackjack.expLuckyQueen(1000, 125, 19, 9, 4);
+        double hotThree = blackjack.expHotThree(100, 20, 4, 2, 1);
+        double luckyThree = blackjack.expLuckThree(100, 40, 30, 10, 5);
+        double pair = blackjack.expPair(25, 8);
         if (xWin > commonQ||luckyQueue>luckyQueueQ|hotThree>hotThreeQ||luckyThree>luckyThreeQ||pair>pairQ) {
            //log.info("shift {}  round {} pai:{}  rate:{}",shift,round, Arrays.toString(blackjack.getPai()), xWin);
            blackjack.removePocker(pz.get(0));
@@ -152,15 +113,15 @@ public class MockBlackjack {
         }
     }
 
-    private static void mockHotThree(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context hotThreeContext) {
-        double hotThree = blackjack.hotThreeExpectation(100, 20, 4, 2, 1);
+    private static void mockHotThree(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext hotThreeContext) {
+        double hotThree = blackjack.expHotThree(100, 20, 4, 2, 1);
         if (hotThree > hotThreeQ) {
             List<Pocker> cards = Arrays.asList(px.get(0), px.get(1), pz.get(0));
             int[] dots = Blackjack.dotsOfPocker(cards);
             double r=-1;
             if (dots[dots.length - 1] == 21) {
 
-                if (Blackjack.isFlush(cards)) {
+                if (Ma.isFlush(cards)) {
                    r=20;
                 } else {
                     r=4;
@@ -178,23 +139,23 @@ public class MockBlackjack {
         }
     }
 
-    private static void mockLuckyThree(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context luckyThreeContext) {
-        double luckyThree = blackjack.luckThreeExpectation(100, 40, 30, 10, 5);
+    private static void mockLuckyThree(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext luckyThreeContext) {
+        double luckyThree = blackjack.expLuckThree(100, 40, 30, 10, 5);
         if (luckyThree >luckyThreeQ) {
             List<Pocker> cards = Arrays.asList(px.get(0), px.get(1), pz.get(0));
             double r=-1;
-            if (Blackjack.isOneOfKind(cards)) {
-                if (Blackjack.isFlush(cards))
+            if (Ma.isOneOfKind(cards)) {
+                if (Ma.isFlush(cards))
                    r=100;
                 else
                    r=30;
-            } else if (Blackjack.isFlush(cards)) {
-                if (Blackjack.isStraight(cards)) {
+            } else if (Ma.isFlush(cards)) {
+                if (Ma.isStraight(cards)) {
                     r=40;
                 } else {
                   r=5;
                 }
-            } else if (Blackjack.isStraight(cards)) {
+            } else if (Ma.isStraight(cards)) {
                r=10;
             } else {
                r=-1;
@@ -205,8 +166,8 @@ public class MockBlackjack {
         }
     }
 
-    private static void mockPair(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context pairContext) {
-        double pair = blackjack.pairExpectation(25, 8);
+    private static void mockPair(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext pairContext) {
+        double pair = blackjack.expPair(25, 8);
         if (pair > pairQ) {
             pairContext.addCount();
             double  r= -1;
@@ -221,8 +182,8 @@ public class MockBlackjack {
             if(printLog)log.info("{}靴{}把 压对子 期望：{}  结果：{}", shift, round, String.format("%.3f",pair), r);
         }
     }
-    private static void mockBloom(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context pairContext) {
-        double pair =  blackjack.bloomExpectation(1, 2, 9, 50, 100,250);
+    private static void mockBloom(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext pairContext) {
+        double pair =  blackjack.expBloom(1, 2, 9, 50, 100,250);
         if (pair > 1.05) {
             double r = -1;
             pairContext.addCount();
@@ -247,8 +208,8 @@ public class MockBlackjack {
         }
     }
 
-    private static void mockLuckyQueue(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, Context luckyQueueContext) {
-        double luckyQueue = blackjack.luckyQueenExpectation(1000, 125, 19, 9, 4);
+    private static void mockLuckyQueue(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext luckyQueueContext) {
+        double luckyQueue = blackjack.expLuckyQueen(1000, 125, 19, 9, 4);
         if (luckyQueue > luckyQueueQ) {
             luckyQueueContext.addCount();
             double r=-1;
@@ -282,18 +243,18 @@ public class MockBlackjack {
     }
 
 
-    private static Context mock(int shift, Blackjack bj) throws NotFoundException {
+    private static MockContext mock(int shift, Blackjack bj) throws NotFoundException {
         List<Pocker> pks = Pocker.randomPocker(8);
         Blackjack blackjack = new Blackjack(pks.size() / 52);
         int round = 0;
         List<Pocker> pz = new ArrayList<>();
         List<Pocker> px = new ArrayList<>();
-        Context luckyQueueContext = new Context("幸运女皇");
-        Context pairContext = new Context("对子");
-        Context luckyThreeContext = new Context("幸运三");
-        Context hotThreeContext = new Context("烫三手");
-        Context commonContext = new Context("底注");
-        Context bloomContext = new Context("庄爆");
+        MockContext luckyQueueContext = new MockContext("幸运女皇");
+        MockContext pairContext = new MockContext("对子");
+        MockContext luckyThreeContext = new MockContext("幸运三");
+        MockContext hotThreeContext = new MockContext("烫三手");
+        MockContext commonContext = new MockContext("底注");
+        MockContext bloomContext = new MockContext("庄爆");
         int cut =  StringUtils.newRandomInt(120, 200);
         while (pks.size() >cut) {
             round++;
@@ -324,7 +285,7 @@ public class MockBlackjack {
             pz.clear();
         }
 
-        Context sum = new Context("sum");
+        MockContext sum = new MockContext("sum");
         sum.merge(luckyQueueContext, times);
         sum.merge(pairContext , times);
         sum.merge(luckyThreeContext, times);
@@ -344,10 +305,10 @@ public class MockBlackjack {
             pairQ= Double.parseDouble(ConfigUtil.getSetting("mock.pair.q", "1.1"));
             luckyQueueQ = Double.parseDouble(ConfigUtil.getSetting("mock.luckyQueue.q", "1.1"));
             times = Integer.parseInt(ConfigUtil.getSetting("mock.times", "20"));
-            Context c0 = new Context("total");
+            MockContext c0 = new MockContext("total");
             for (int i = 1; i <= 10000; i++) {
                 Blackjack bj = new Blackjack(8);
-                Context c = mock(i, bj);
+                MockContext c = mock(i, bj);
                 log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), c.getMaxWin(), c.getMinWin(), c.getResult());
                 c0.merge(c);
                 log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), c0.getMaxWin(), c0.getMinWin(), c0.getResult());

@@ -1,4 +1,4 @@
-/target/
+**/target/
 # Java-specific ignores
 *.class # 忽略编译后的字节码文件
 
@@ -8,11 +8,11 @@
 *.ipr
 *.iws
 out/ # IntelliJ IDEA 输出目录
-target/ # Maven 或其他构建工具生成的输出目录
-build/ # Gradle 构建目录
+bj-server/target/ # Maven 或其他构建工具生成的输出目录
+*/build/ # Gradle 构建目录
 
 # 日志和快照数据
-logs/
+**/logs/
 *.log
 *.dump
 *.hprof
@@ -56,3 +56,4 @@ db_backups/
 
 # 仅作为示例，根据实际情况调整
 custom_directory/*
+/bj-server/target/

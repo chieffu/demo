@@ -8,10 +8,10 @@ public enum BjTypeEnum {
     BLOOM("爆牌",4,"前三张3张爆赔1,4张爆赔2,5张爆赔9,6张爆赔50,7张爆赔100,8张或以上爆赔250"),
     LUCKY_QUEEN("幸运女皇",5,"庄BJ闲红桃Q对1000,闲家前两张红桃Q对赔125,纯色对子赔19,同花20点赔9，任意20点赔4");
 
-    private String name;
-    private int code;
+    private final String name;
+    private final int code;
 
-    private String description;
+    private final String description;
 
     BjTypeEnum(String name,int code,String description){
        this.name = name;
