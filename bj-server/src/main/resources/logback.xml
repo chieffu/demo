@@ -19,7 +19,7 @@
     <!-- 定义控制台输出的基本配置 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} --- %msg%n</pattern>
         </encoder>
     </appender>
 

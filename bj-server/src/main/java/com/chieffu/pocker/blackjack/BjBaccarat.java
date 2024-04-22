@@ -34,6 +34,9 @@ public class BjBaccarat extends Blackjack {
     @Data
     public static class Node {
         public final static Node root = initAllNodes();
+        public final static List<Node> END_NODES = root.getEndNodes();
+        public final static Map<Integer, List<Node>> DOT_END_NODES = END_NODES.stream().collect(Collectors.groupingBy(n -> n.getDot()));
+
         private Node parent;
         private List<Node> next = new ArrayList<>();
         private Integer pai;//1 - 10
@@ -167,7 +170,8 @@ public class BjBaccarat extends Blackjack {
      * @return
      */
     public double rBjWin() {
-        return rBj() - rBj() * rBjHe();
+        double bj = rBj();
+        return bj - bj*rBjHe();
     }
 
     /**
@@ -175,9 +179,9 @@ public class BjBaccarat extends Blackjack {
      * @return
      */
     public double rXBloom() {
-        List<Node> nodes = Node.root.getEndNodes().stream().filter(node -> node.getDot() > 21).collect(Collectors.toList());
         double sum = 0;
-        for (Node node : nodes) {
+        List<Node> bloomNode = Node.END_NODES.stream().filter(i -> i.getDot() > 21).collect(Collectors.toList());
+        for (Node node : bloomNode) {
             sum += node.rate(getPai());
         }
         return sum;
@@ -188,8 +192,16 @@ public class BjBaccarat extends Blackjack {
      * @return
      */
     public double rZBloom() {
-        double xb = rXBloom();
-        return (1 - xb) * xb;
+        List<Node> bloomNode = Node.END_NODES.stream().filter(i -> i.getDot() > 21).collect(Collectors.toList());
+        double sum = 0;
+        for (int i = 21; i > 2; i--) {
+            List<Node> list = Node.DOT_END_NODES.getOrDefault(i,new ArrayList<>());
+            sum+=sumRate(i,list, bloomNode);
+        }
+//        double xb = rXBloom();
+//        double r0 = (1 - xb) * xb;
+//        System.out.println(sum==r0);
+        return sum;
     }
 
     /**
@@ -197,8 +209,8 @@ public class BjBaccarat extends Blackjack {
      * @return
      */
     public double rXWin() {
-        double sum = rWinNotBloom();
-        return sum + rZBloom();
+        double sum = rWinNotBloom()+rBjWin();
+        return sum  + rZBloom();
     }
 
     /**
@@ -207,23 +219,15 @@ public class BjBaccarat extends Blackjack {
      */
     public double rWinNotBloom() {
         double sum = 0;
-        List<Node> nodes = Node.root.getEndNodes();
-        Map<Integer, List<Node>> groups = nodes.stream().collect(Collectors.groupingBy(n -> n.getDot()));
         for (int i = 21; i > 2; i--) {
             for (int j = i - 1; j > 0; j--) {
-                List<Node> list = groups.get(i);
-                List<Node> next = groups.get(j);
+                List<Node> list = Node.DOT_END_NODES.getOrDefault(i,new ArrayList<>());
+                List<Node> next = Node.DOT_END_NODES.getOrDefault(j,new ArrayList<>());
                 if (list == null || list.isEmpty() || next == null || next.isEmpty()) continue;
-                for (Node n : list) {
-                    boolean isBlackjack = n.isBlackjack();
-                    if (isBlackjack) continue;
-                    for (Node m : next) {
-                        sum += n.rate(m, getPai());
-                    }
-                }
+                sum+=sumRate(i,list, next);
             }
         }
-        return sum + rBjWin();
+        return sum ;
     }
 
     /**
@@ -232,14 +236,12 @@ public class BjBaccarat extends Blackjack {
      */
     public double rHe() {
         double sum = 0;
-        List<Node> nodes = Node.root.getEndNodes();
-        Map<Integer, List<Node>> groups = nodes.stream().collect(Collectors.groupingBy(n -> n.getDot()));
+        Map<Integer, List<Node>> groups = Node.DOT_END_NODES;
         for (int i = 21; i > 2; i--) {
             List<Node> list = groups.get(i);
             if (list == null || list.isEmpty()) continue;
             for (Node n : list) {
-                boolean isBlackjack = n.isBlackjack();
-                if (isBlackjack) continue;
+                if (n.isBlackjack()) continue;
                 for (Node m : list) {
                     if (m.isBlackjack()) continue;
                     sum += n.rate(m, getPai());
@@ -249,8 +251,15 @@ public class BjBaccarat extends Blackjack {
         return sum + rBjHe();
     }
 
+    /**
+     * 任意对子
+     * @return
+     */
+    public double rPair(){
+       return super.rPair();
+    }
     private double rBjHe() {
-       return c(countPai(1), 1) * c(countPai(10), 1) / (double)c(countPai(), 2) * c(countPai(1) - 1, 1) * c(countPai(10) - 1, 1) / (double)c(countPai() - 2, 2);
+        return c(countPai(1), 1) * c(countPai(10), 1) / (double) c(countPai(), 2) * c(countPai(1) - 1, 1) * c(countPai(10) - 1, 1) / (double) c(countPai() - 2, 2);
     }
 
     public double p2(int n){
@@ -271,9 +280,39 @@ public class BjBaccarat extends Blackjack {
      * @return
      */
     public double rZWin() {
-        return rWinNotBloom() + rXBloom();
+        return rWinNotBloom() +rBjWin()+ rXBloom() - rXBloomZbj();
     }
 
+    public double rXBloomZbj() {
+        List<Node> bloomNodes = Node.END_NODES.stream().filter(i->i.getDot()>21).collect(Collectors.toList());
+        List<Node> bjs = Node.DOT_END_NODES.getOrDefault(21,new ArrayList<>()).stream().filter(i->i.isBlackjack()).collect(Collectors.toList());
+        return sumRate(0,bloomNodes,bjs);
+    }
+    /**
+     *
+     * 单 不爆牌
+     * @return
+     */
+    public double rOddNotBloom(){
+        double sum = 0.0;
+        for(int j=21;j>2;j--){
+            if(j%2==1){
+                List<Node> list = Node.DOT_END_NODES.getOrDefault(j,new ArrayList<>());
+                for(Node n:list){
+                    sum+=n.rate(getPai());
+                }
+            }
+        }
+        return sum;
+    }
+
+    /**
+     * 闲单	1:1	闲家手牌(含补牌)，点数加总为奇数(包含BJ)且不爆牌。如果闲爆牌将退还本金	(15局后不能下单）
+     * @return
+     */
+    public double expXOdd(){
+        return 2.0*rOddNotBloom() + rXBloom();
+    }
 
     /**
      *  庄家赢的期望    赔率1:0.92 和了退回本金
@@ -323,7 +362,7 @@ public class BjBaccarat extends Blackjack {
      */
     public double expZ21Win(){
        double z21_2= rBjWin() * 7;
-       double z21_3 = Node.root.getEndNodes().stream().filter(node->node.getDot()==21 && node.getCards().size()==3).map(n->n.rate(getPai())).reduce((a, b) -> a + b).orElse(0.0);
+       double z21_3 = Node.DOT_END_NODES.get(21).stream().filter(node->node.getCards().size()==3).map(n->n.rate(getPai())).reduce((a, b) -> a + b).orElse(0.0);
        return z21_2 + (1-rXBloom())*z21_3 * 14;
     }
 
@@ -349,8 +388,7 @@ public class BjBaccarat extends Blackjack {
      */
     public double expLongBao() {
         double sum = 0;
-        List<Node> nodes = Node.root.getEndNodes();
-        Map<Integer, List<Node>> groups = nodes.stream().collect(Collectors.groupingBy(n -> n.getDot()));
+        Map<Integer, List<Node>> groups = Node.DOT_END_NODES;
         for (int i = 21; i > 6; i--) {
              List<Node> list = groups.getOrDefault(i,new ArrayList<>());
              if(i==21){
@@ -360,35 +398,51 @@ public class BjBaccarat extends Blackjack {
             next13_15.addAll(groups.getOrDefault(i-13,new ArrayList<>()));
             next13_15.addAll(groups.getOrDefault(i-14,new ArrayList<>()));
             next13_15.addAll(groups.getOrDefault(i-15,new ArrayList<>()));
-            sum+= sumRate(list, next13_15) * 31;
+            sum+= sumRate(i,list, next13_15) * 31;
 
             List<Node> next10_12 = new ArrayList<>();
             next10_12.addAll(groups.getOrDefault(i-10,new ArrayList<>()));
             next10_12.addAll(groups.getOrDefault(i-11,new ArrayList<>()));
             next10_12.addAll(groups.getOrDefault(i-12,new ArrayList<>()));
-            sum+= sumRate(list, next10_12) * 11;
+            sum+= sumRate(i,list, next10_12) * 11;
 
             List<Node> next7_9 = new ArrayList<>();
             next7_9.addAll(groups.getOrDefault(i-7,new ArrayList<>()));
             next7_9.addAll(groups.getOrDefault(i-8,new ArrayList<>()));
             next7_9.addAll(groups.getOrDefault(i-9,new ArrayList<>()));
-            sum+= sumRate(list, next7_9) * 4;
+            sum+= sumRate(i,list, next7_9) * 4;
 
             List<Node> next4_6 = new ArrayList<>();
             next4_6.addAll(groups.getOrDefault(i-4,new ArrayList<>()));
             next4_6.addAll(groups.getOrDefault(i-5,new ArrayList<>()));
             next4_6.addAll(groups.getOrDefault(i-6,new ArrayList<>()));
-            sum+= sumRate(list, next4_6) * 3;
+            sum+= sumRate(i,list, next4_6) * 3;
 
             List<Node> next1_3 = new ArrayList<>();
             next1_3.addAll(groups.getOrDefault(i-1,new ArrayList<>()));
             next1_3.addAll(groups.getOrDefault(i-2,new ArrayList<>()));
             next1_3.addAll(groups.getOrDefault(i-3,new ArrayList<>()));
-            sum+= sumRate(list, next1_3) * 2;
+            sum+= sumRate(i,list, next1_3) * 2;
 
         }
         return sum + rBjWin()*2 + rBjHe();
     }
+
+    /**
+     * 庄爆牌	1:6.5	庄家手牌(含补牌)，点数加总超过21点	30局后不得下注
+     * @return
+     */
+    public double expZBloom(){
+        return rZBloom()*7.5;
+    }
+    /**
+     * 闲爆牌	1:5.3	闲家手牌(含补牌)，点数加总超过21点	30
+     * @return
+     */
+    public double expXBloom(){
+        return rZBloom()*6.3;
+    }
+
 
     public double t0(){
         double sum = 0;
@@ -402,11 +456,11 @@ public class BjBaccarat extends Blackjack {
         return sum;
     }
 
-    private double sumRate(List<Node> list, List<Node> next) {
+    private double sumRate(int i,List<Node> list, List<Node> next) {
         double d0 = 0;
         if ( list.isEmpty() ||  next.isEmpty()) return d0;
         for (Node n : list) {
-            if (n.isBlackjack()) continue;
+            if (i==21&&n.isBlackjack()) continue;
              for (Node m : next) {
                 d0 += n.rate(m, getPai());
             }
@@ -414,7 +468,7 @@ public class BjBaccarat extends Blackjack {
         return d0;
     }
 
-    public static MockContext mock(int i) throws NotFoundException {
+    public static MockContext mock(int i,double gate) throws NotFoundException {
         List<Pocker> pks = Pocker.randomPocker(8);
         BjBaccarat bj = new BjBaccarat(pks.size() / 52);
         int round = 0;
@@ -424,8 +478,8 @@ public class BjBaccarat extends Blackjack {
         MockContext longBaoContext = new MockContext("龙宝");
         MockContext xContext = new MockContext("闲");
         MockContext zContext = new MockContext("庄");
-        int cut =  StringUtils.newRandomInt(120, 200);
-        while (pks.size() >cut) {
+        int cut =  StringUtils.newRandomInt(416-240, 416-256);
+        while (pks.size()>cut) {
             round++;
 
             px.add(pks.remove(pks.size() - 1));
@@ -444,8 +498,10 @@ public class BjBaccarat extends Blackjack {
             }
 
             //mockLongBao(i, bj, round, pz, px, longBaoContext, xDot, zDot);
-            mockX(i, bj, round, pz, px, xContext, xDot, zDot);
-            mockZ(i, bj, round, pz, px, zContext, xDot, zDot);
+            mockX(i, bj, round, pz, px, xContext, xDot, zDot,gate);
+//            if(!mockZ){
+//                boolean mockZ = mockZ(i, bj, round, pz, px, zContext, xDot, zDot,gate);
+//            }
             bj.removePocker(px);
             bj.removePocker(pz);
             px.clear();
@@ -457,7 +513,7 @@ public class BjBaccarat extends Blackjack {
         return total;
     }
 
-    private static void mock(int i, BjBaccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext longBaoContext, int[] xDot, int[] zDot) {
+    private static void mockLongBao(int i, BjBaccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext longBaoContext, int[] xDot, int[] zDot) {
         double rlongbao = bj.expLongBao();
         if(rlongbao>1.0) {
             double result = -1;
@@ -486,9 +542,9 @@ public class BjBaccarat extends Blackjack {
                     , longBaoContext.getMinWin(), longBaoContext.getMaxWin(), longBaoContext.getResult(),result, px, xDot[xDot.length-1], pz, zDot[zDot.length-1]);
         }
     }
-    private static void mockX(int i, BjBaccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext, int[] xDot, int[] zDot) {
+    private static boolean mockX(int i, BjBaccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext, int[] xDot, int[] zDot,double gate) {
         double expXWin = bj.expXWin();
-        if(expXWin>=1.0) {
+        if(expXWin>=gate) {
             double result = -1;
             if(bj.isBj(px)&& bj.isBj(pz)){
                 result = 0;
@@ -503,19 +559,21 @@ public class BjBaccarat extends Blackjack {
             xContext.addResult(result);
             log.info("第{}靴第{}局压{}:{} ---- cnt: {} min: {} max: {}  result: {}   结果 {}  {}{} - {}{} "
                     , i, round,xContext.getName(),String.format("%.4f",expXWin), xContext.getCount()
-                    , xContext.getMinWin(), xContext.getMaxWin(), xContext.getResult(),result, px, xDot[xDot.length-1], pz, zDot[zDot.length-1]);
+                    , String.format("%.2f",xContext.getMinWin()), String.format("%.2f",xContext.getMaxWin()), String.format("%.2f",xContext.getResult()),String.format("%.2f",result), px, xDot[xDot.length-1], pz, zDot[zDot.length-1]);
+            return true;
         }
+        return false;
     }
-    private static void mockZ(int i, BjBaccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext zContext, int[] xDot, int[] zDot) {
+    private static boolean mockZ(int i, BjBaccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext zContext, int[] xDot, int[] zDot,double gate) {
         double expZWin = bj.expZWin();
-        if(expZWin>=1.0) {
+        if(expZWin>=gate) {
             double result = -1;
             if(bj.isBj(px)&& bj.isBj(pz)){
                 result = 0;
             }else if(bj.isBj(pz)||xDot[xDot.length - 1]>21){
-                result = 1;
+                result = 0.92;
             } else if (zDot[zDot.length - 1] <= 21 && xDot[xDot.length - 1] < zDot[zDot.length - 1]) {
-                result = 1;
+                result = 0.92;
             }else if( xDot[xDot.length - 1] == zDot[zDot.length - 1]){
                 result = 0;
             }
@@ -523,21 +581,23 @@ public class BjBaccarat extends Blackjack {
             zContext.addResult(result);
             log.info("第{}靴第{}局压{}:{} ---- cnt: {} min: {} max: {}  result: {}   结果 {}  {}{} - {}{} "
                     , i, round,zContext.getName(),String.format("%.4f",expZWin), zContext.getCount()
-                    , zContext.getMinWin(), zContext.getMaxWin(), zContext.getResult(),result, px, xDot[xDot.length-1], pz, zDot[zDot.length-1]);
+                    , String.format("%.2f",zContext.getMinWin()), String.format("%.2f",zContext.getMaxWin()), String.format("%.2f",zContext.getResult()),String.format("%.2f",result), px, xDot[xDot.length-1], pz, zDot[zDot.length-1]);
+            return true;
         }
+        return false;
     }
 
     public Boolean isBj(List<Pocker> cards) {
        return Blackjack.isBlackjack(cards.stream().map(Pocker::getBlackjackDot).collect(Collectors.toList()));
     }
     public static void main(String[] args) throws Exception {
-        test();
+//        test();
         MockContext c0 = new MockContext("total");
-        for (int i = 1; i <= 100; i++) {
-            MockContext c = mock(i);
-            log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), c.getMaxWin(), c.getMinWin(), c.getResult());
+        for (int i = 1; i <= 1000; i++) {
+            MockContext c = mock(i,0.99);
+            log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
             c0.merge(c);
-            log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), c0.getMaxWin(), c0.getMinWin(), c0.getResult());
+            log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
         }
 
     }
@@ -550,7 +610,6 @@ public class BjBaccarat extends Blackjack {
             log.info("点数{}  牌{}", node.getDot(), node.getCards());
         }
         log.info("终态节点总计 {}", nodes.size());
-        log.info("sum all node  概率：{}", bjB.t0());
         log.info("------------------------");
         List<Node> middleNode = root.getMiddleNode();
         for (Node node : middleNode) {
@@ -560,19 +619,32 @@ public class BjBaccarat extends Blackjack {
         Blackjack bj = new Blackjack();
         log.info("BJ 赢的概率：{}", bj.rBjWin());
 
+        log.info("sum all node  概率：{}", bjB.t0());
+        log.info("sum zxh {}", bjB.rHe()+ bjB.rXWin()+bjB.rZWin());
 
 
         log.info("bjWin 概率：{}", bjB.rBjWin());
-        log.info("xBloom 概率：{}", bjB.rXBloom());
-        log.info("zBloom 概率：{}", bjB.rZBloom());
-        log.info("xWin 概率：{}", bjB.rXWin());
-        log.info("zWin 概率：{}", bjB.rZWin());
-        log.info("he 概率：{}", bjB.rHe());
-
-        log.info("expXWin 期望：{}", bjB.expXWin());
-        log.info("expZWin 期望：{}", bjB.expZWin());
-        log.info("expHe 期望：{}", bjB.expHe());
         log.info("expBJ 期望：{}", bjB.expBJ());
+
+        log.info("xBloom 概率：{}", bjB.rXBloom());
+        log.info("expXBloom 期望：{}", bjB.expXBloom());
+
+        log.info("zBloom 概率：{}", bjB.rZBloom());
+        log.info("expZBloom 期望：{}", bjB.expZBloom());
+
+        log.info("he 概率：{}", bjB.rHe());
+        log.info("expHe 期望：{}", bjB.expHe());
+
+        log.info("xWin 概率：{}", bjB.rXWin());
+        log.info("expXWin 期望：{}", bjB.expXWin());
+
+        log.info("zWin 概率：{}", bjB.rZWin());
+        log.info("expZWin 期望：{}", bjB.expZWin());
+
+        log.info("rOddNotBloom 概率： {}",bjB.rOddNotBloom());
+        log.info("expXOdd 概率： {}",bjB.expXOdd());
+
+
         log.info("expP2_20 期望：{}", bjB.expP2_20());
         log.info("expZ21Win 期望：{}", bjB.expZ21Win());
         log.info("expLongBao 期望：{}", bjB.expLongBao());

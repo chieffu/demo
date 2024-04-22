@@ -18,13 +18,41 @@ public class IndiaSofa extends Blackjack{
         super(n);
     }
 
+    public static double rB(int n,int m){
+       double total = p(51,3);
+       return 3*(m-n+1)*p(51-n,2)/total;
+    }
     public static void main(String[] args) {
+        double sum=0.0;
+        double[] peilv = new double[]{2,3,4,5,8,12,20,40,110,800};
+        int k=0;
+        for(int i=1;i<45;i+=5,k++){
+            double rate = rB(i, i + 4);
+            sum+= rate;
+            log.info("{}_{}  - {}  --  {}",i,i+4, rate, rate *(peilv[k]+1));
+        }
+        double  r1= c(6,3)/(double)c(51,3);
+        double rate = rB(45,49);
+        log.info("{}_{}  - {}  --  {}",45,49, rate, rate *(peilv[peilv.length-1]+1));
+        log.info("sum : {}",sum);
 
-        System.out.println("Hello India");
-        double result = yindu6he();
-        System.out.println(result);
-        System.out.println(duizi());
-        mock(10);
+//        1-5  2
+//        6-10 3
+//        11-15 4
+//        16-20 5
+//        21-25 8
+//        26-30 12
+//        31-35 20
+//        36-40 40
+//        41-45 110
+//        46-50 800
+
+//
+//        System.out.println("Hello India");
+//        double result = yindu6he();
+//        System.out.println(result);
+//        System.out.println(duizi());
+//        mock(10);
     }
     private static MockContext mock( int n)  {
         MockContext mockContext = new MockContext("印度炸金花六合彩");
