@@ -115,11 +115,11 @@ public class BjController {
         BjTable table = service.getTable(tableId);
 
         List<Integer> xCards = play.getPlayer().stream().map(c->Blackjack.dot(Pocker.fromCard(c))).collect(Collectors.toList());
-        Stage xStage = Stage.getXStage(xCards);
+        Blackjack.Stage xStage = Blackjack.Stage.getX_ROOT(xCards);
 
         Integer zCard =  Blackjack.dot(Pocker.fromCard(play.getBanker().get(0)));
-        Map<Integer, Double> zRateMap = Stage.zRate(table.getBlackjack().getPai(), zCard);
-        double oneMoreCardWinRate = xStage==null?0:Stage.xWinRate(zRateMap, xStage.oneMoreCardRateMap(table.getBlackjack().getPai()));
+        Map<Integer, Double> zRateMap = Blackjack.zRate(table.getBlackjack().getPai(), zCard);
+        double oneMoreCardWinRate = xStage==null?0: Blackjack.xWinRate(zRateMap, xStage.oneMoreCardRateMap(table.getBlackjack().getPai()));
         return oneMoreCardWinRate;
     }
 
@@ -129,9 +129,9 @@ public class BjController {
         List<Integer> xCards = play.getPlayer().stream().map(c->Blackjack.dot(Pocker.fromCard(c))).collect(Collectors.toList());
         int[] dot = Blackjack.dots(xCards);
         Integer zCard =  Blackjack.dot(Pocker.fromCard(play.getBanker().get(0)));
-        Map<Integer, Double> zRateMap = Stage.zRate(bj.getPai(), zCard);
+        Map<Integer, Double> zRateMap = Blackjack.zRate(bj.getPai(), zCard);
 
-        double currentWinRate =Stage.getCurrentWinRate(dot[dot.length - 1], zRateMap);
+        double currentWinRate = Blackjack.getCurrentWinRate(dot[dot.length - 1], zRateMap);
         return currentWinRate;
     }
 

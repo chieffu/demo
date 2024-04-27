@@ -28,9 +28,21 @@ public class Ma {
      * @return 返回组合数C(n, m)的值。如果m大于n或m小于0，返回0。
      */
     public static long c(int n, int m) {
-        if (m > n || m < 0) return 0;
+        if (m > n || m < 0||n<+0) return 0;
         int k = Math.min((n - m), m);
-        return Ma.p(n, k) / Ma.p(k, k);
+        double r = 1.0;
+        while(k>0){
+            r*=n--/(double)k--;
+        }
+        return Math.round(r);
+
+//        if (m > n || m < 0||n<=0) return 0;
+//        int k = Math.min((n - m), m);
+//        double r = 1.0;
+//        for(int i=0;i<k;i++){
+//            r*=(n-i)/(double)(i+1);
+//        }
+//        return Math.round(r);
     }
 
     public static boolean isStraight(List<Pocker> pockers) {
@@ -103,5 +115,10 @@ public class Ma {
         return result;
     }
 
+    public static void main(String[] args)throws Exception {
+        for(int i=0;i<10;i++){
+            System.out.println(String.format("c(10,%s) - %s",i,Ma.c(10,i)));
+        }
+    }
 
 }

@@ -171,7 +171,7 @@ public class BjBaccarat extends Blackjack {
      */
     public double rBjWin() {
         double bj = rBj();
-        return bj - bj*rBjHe();
+        return bj - rBjHe();
     }
 
     /**
@@ -258,7 +258,7 @@ public class BjBaccarat extends Blackjack {
     public double rPair(){
        return super.rPair();
     }
-    private double rBjHe() {
+    public double rBjHe() {
         return c(countPai(1), 1) * c(countPai(10), 1) / (double) c(countPai(), 2) * c(countPai(1) - 1, 1) * c(countPai(10) - 1, 1) / (double) c(countPai() - 2, 2);
     }
 
@@ -456,11 +456,11 @@ public class BjBaccarat extends Blackjack {
         return sum;
     }
 
-    private double sumRate(int i,List<Node> list, List<Node> next) {
+    private double sumRate(int currentDot,List<Node> list, List<Node> next) {
         double d0 = 0;
         if ( list.isEmpty() ||  next.isEmpty()) return d0;
         for (Node n : list) {
-            if (i==21&&n.isBlackjack()) continue;
+            if (currentDot==21&&n.isBlackjack()) continue;
              for (Node m : next) {
                 d0 += n.rate(m, getPai());
             }
@@ -591,10 +591,10 @@ public class BjBaccarat extends Blackjack {
        return Blackjack.isBlackjack(cards.stream().map(Pocker::getBlackjackDot).collect(Collectors.toList()));
     }
     public static void main(String[] args) throws Exception {
-//        test();
+        test();
         MockContext c0 = new MockContext("total");
-        for (int i = 1; i <= 1000; i++) {
-            MockContext c = mock(i,0.99);
+        for (int i = 1; i <= 1; i++) {
+            MockContext c = mock(i,1);
             log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
             c0.merge(c);
             log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
@@ -618,6 +618,10 @@ public class BjBaccarat extends Blackjack {
         log.info("中间态节点总计 {}", middleNode.size());
         Blackjack bj = new Blackjack();
         log.info("BJ 赢的概率：{}", bj.rBjWin());
+        log.info("bjB 赢的概率：{}", bjB.rBjWin());
+
+        log.info("BJ 和的概率：{}", bj.rBjHe());
+        log.info("bjB 和的概率：{}", bjB.rBjHe());
 
         log.info("sum all node  概率：{}", bjB.t0());
         log.info("sum zxh {}", bjB.rHe()+ bjB.rXWin()+bjB.rZWin());

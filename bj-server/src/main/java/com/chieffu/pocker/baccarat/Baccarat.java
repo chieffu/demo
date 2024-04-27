@@ -2,13 +2,12 @@ package com.chieffu.pocker.baccarat;
 
 import com.chieffu.pocker.Ma;
 import com.chieffu.pocker.Pocker;
+import com.chieffu.pocker.blackjack.MockContext;
 import com.chieffu.pocker.util.StringUtils;
-import com.chieffu.pocker.util.ThreadPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.Future;
 
 public class Baccarat extends Ma {
     private static final Logger log = LoggerFactory.getLogger(Baccarat.class);
@@ -73,110 +72,6 @@ public class Baccarat extends Ma {
         init(8);
     }
 
-    public static double[] mock(int shift, List<Pocker> pks) {
-        Baccarat pock = new Baccarat();
-        pock.init(pks.size() / 52);
-        double[] pl = pock.getLongBaoPeiLv();
-        int c0 = 0;
-        int c1 = 0;
-        int c2 = 0;
-        int c3 = 0;
-        int c4 = 0;
-        int c5 = 0;
-        int c6 = 0;
-        int c7 = 0;
-        int c8 = 0;
-        int round = 0;
-        double r0 = 0.0D;
-        double r1 = 0.0D;
-        double r2 = 0.0D;
-        double r3 = 0.0D;
-        double r4 = 0.0D;
-        double r5 = 0.0D;
-        double r6 = 0.0D;
-        double r7 = 0.0D;
-        double r8 = 0.0D;
-        double max = -100.0D;
-        double min = 100.0D;
-        int maxRound = StringUtils.newRandomInt(60, 62);
-        while (round++ < maxRound) {
-            Pocker px1 = pks.remove(pks.size() - 1);
-            Pocker px2 = pks.remove(pks.size() - 1);
-            Pocker pz1 = pks.remove(pks.size() - 1);
-            Pocker pz2 = pks.remove(pks.size() - 1);
-            Pocker px3 = null;
-            Pocker pz3 = null;
-//            int x2 = (px1.getBaccaratDot() + px2.getBaccaratDot()) % 10;
-//            int z2 = (pz1.getBaccaratDot() + pz2.getBaccaratDot()) % 10;
-//            int x3 = x2;
-//            int z3 = z2;
-//            if (x2 == 8 || x2 == 9 || z2 == 8 || z2 == 9 || ((x2 == 6 || x2 == 7) && (z2 == 6 || z2 == 7))) {
-//                x3 = x2;
-//                z3 = z2;
-//            } else if (x2 <= 5) {
-//                px3 = pks.remove(pks.size() - 1);
-//                int i3 = px3.getBaccaratDot();
-//                x3 = (x2 + i3) % 10;
-//                if (z2 <= 2 || (z2 == 3 && i3 != 8) || (z2 == 4 && i3 != 0 && i3 != 1 && i3 != 8 && i3 != 9) || (z2 == 5 && i3 != 0 && i3 != 1 && i3 != 2 && i3 != 3 && i3 != 8 && i3 != 9) || (z2 == 6 && (i3 == 6 || i3 == 7))) {
-//                    pz3 = pks.remove(pks.size() - 1);
-//                    z3 = (z2 + pz3.getBaccaratDot()) % 10;
-//                } else {
-//                    z3 = z2;
-//                }
-//            } else if (z2 <= 2 || (z2 != 6 && z2 != 7 && z2 < x2)) {
-//                pz3 = pks.remove(pks.size() - 1);
-//                z3 = (z2 + pz3.getBaccaratDot()) % 10;
-//            } else {
-//                z3 = z2;
-//                x3 = x2;
-//            }
-            double d1 = pock.rPair() * 12;
-            if(d1>0.95){
-                double result = 0;
-                if(px1.getNum()==px2.getNum()  ) {
-                    result+= 11;
-                }else{
-                    result-=1;
-                }
-                if(pz1.getNum()==pz2.getNum()){
-                    result+=11;
-                }else{
-                    result-=1;
-                }
-                r1+=result;
-                c1++;
-                logger.info("{}靴{}把 闲对子：{}   [{},{}]  [{} {}] {}", shift, round, d1 ,pz1,pz2,px1,px2 ,result);
-
-                logger.info("{}靴{}把 闲对子：{}", Integer.valueOf(shift), Integer.valueOf(round), Double.valueOf(d1));
-            }
-//            double d4 = pock.xLongBao();
-//            if (d4 >= 1.0D) {
-//                c4++;
-//                logger.info("{}靴{}把 闲龙宝：{}", Integer.valueOf(shift), Integer.valueOf(round), Double.valueOf(d4));
-//                if (px3 == null && pz3 == null) {
-//                    if ((x3 == 9 || x3 == 8) && x3 > z3) {
-//                        r4++;
-//                    } else if (x3 != z3 || (x3 != 8 && x3 != 9)) {
-//                        r4--;
-//                    }
-//                } else {
-//                    int k = x3 - z3;
-//                    if (k <= 3) {
-//                        r4--;
-//                    } else {
-//                        r4 += pl[9 - k] - 1.0D;
-//                    }
-//                }
-//            }
-            pock.removePocker(px1);
-            pock.removePocker(px2);
-            pock.removePocker(px3);
-            pock.removePocker(pz1);
-            pock.removePocker(pz2);
-            pock.removePocker(pz3);
-        }
-        return new double[]{(c0 + c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8), r0 + r1 + r2 + r3 + r4 + r5 + r6 + r7 + r8};
-    }
 
     public void removeCards(Integer... cards) {
         for (Integer card : cards) {
@@ -199,6 +94,11 @@ public class Baccarat extends Ma {
         for (int i = 0; i < this.pai.length; i++)
             sum += this.pai[i];
         return sum;
+    }
+
+    public int countPai(int num){
+        if(num<0||num>10)return 0;
+        return pai[num];
     }
 
     public int countPai1() {
@@ -246,7 +146,7 @@ public class Baccarat extends Ma {
                 rXLp() * pl[6] + rXZLpHe() * pl[7];
     }
 
-    private double rLp() {
+    public double rLp() {
         return totalLipai() * 1.0D / p(countPai(), 4);
     }
 
@@ -267,6 +167,21 @@ public class Baccarat extends Ma {
         }
         sum = sum - countXZ22(8, 9) - countXZ22(8, 8) - countXZ22(9, 8) - countXZ22(9, 9);
         return sum;
+    }
+
+    public double rLp0(){
+        double r = 0.0;
+        double total  = c(countPai(),2);
+        for(int i=0;i<=9/2;i++){
+           r += c(countPai(i),1)*c(countPai(9-i),1);
+           if(i==4){
+               r+=c(countPai(i),2);
+           }else{
+               r+=c(countPai(i),1)*c(countPai(8-i),1);
+           }
+        }
+        r+=c(countPai(9),2);
+        return r/total;
     }
 
     public double rSmall() {
@@ -439,6 +354,10 @@ public class Baccarat extends Ma {
         return 1.0D * (countXZ22(8, 8) + countXZ22(9, 9)) / p(countPai(), 4);
     }
 
+    public double expLp() {
+        return (rZLp()+rXLp()- (countXZ22(8, 8) + countXZ22(9, 9)+countXZ22(9, 8) + countXZ22(8, 9))/p(countPai(),4))*2.6;
+    }
+
     public double rZLp() {
         long zlp = 0L;
         for (int i = 0; i <= 9; i++) {
@@ -453,6 +372,11 @@ public class Baccarat extends Ma {
     public void removePocker(Pocker p) {
         if (p != null)
             removePai(p.getNum(), p.getSuit().getHuaSe());
+    }
+    public void removePocker(List<Pocker> pockers) {
+        for(Pocker p:pockers){
+            removePocker(p);
+        }
     }
 
     public void removePai(int num, int huaSe) {
@@ -480,9 +404,30 @@ public class Baccarat extends Ma {
         long sum = 0L;
         for (int i1 = 0; i1 < this.pk.length; i1++) {
             int k1 = getSum(this.pk[i1]);
-            sum += p(k1, 2);
+            sum += c(k1, 2);
         }
-        return sum /(double) p(countPai1(), 2);
+        return sum /(double) c(countPai1(), 2);
+    }
+    public double rAnyPair() {
+        long sum = 0L;
+        int[] nums = new int[pk.length];
+        int countPai = countPai();
+        double total = c(countPai(),4);
+        for (int i1 = 0; i1 < this.pk.length; i1++) {
+            nums[i1]=getSum(this.pk[i1]);
+        }
+        for(int i=0;i<nums.length;i++){
+            sum+=c(nums[i],2)*c(countPai-2,2);
+        }
+        double pairPair = 0;
+        for(int i=0;i<nums.length;i++){
+            for(int j=0;j<nums.length;j++){
+                if(i!=j)
+                pairPair+=c(nums[i],2)*c(nums[j],2);
+            }
+        }
+
+        return (sum-pairPair)/total;
     }
 
     public double rXLp() {
@@ -572,54 +517,54 @@ public class Baccarat extends Ma {
             z3 = (z2 + pz3.getBaccaratDot()) % 10;
         Map<BaccaratBetType, Double> result = new HashMap<>();
         if (px3 == null && pz3 == null) {
-            result.put(BaccaratBetType.Big, Double.valueOf(-1.0D));
-            result.put(BaccaratBetType.Small, Double.valueOf(BaccaratBetType.Small.rate));
+            result.put(BaccaratBetType.Big, -1.0D);
+            result.put(BaccaratBetType.Small, BaccaratBetType.Small.rate);
         } else {
-            result.put(BaccaratBetType.Big, Double.valueOf(BaccaratBetType.Big.rate));
-            result.put(BaccaratBetType.Small, Double.valueOf(-1.0D));
+            result.put(BaccaratBetType.Big, BaccaratBetType.Big.rate);
+            result.put(BaccaratBetType.Small, -1.0D);
         }
         if (z3 == x3)
-            result.put(BaccaratBetType.Tie, Double.valueOf(BaccaratBetType.Tie.rate));
+            result.put(BaccaratBetType.Tie, BaccaratBetType.Tie.rate);
         if (px1.getNum() == px2.getNum()) {
-            result.put(BaccaratBetType.PlayerPair, Double.valueOf(BaccaratBetType.PlayerPair.rate));
+            result.put(BaccaratBetType.PlayerPair, BaccaratBetType.PlayerPair.rate);
         } else {
-            result.put(BaccaratBetType.PlayerPair, Double.valueOf(-1.0D));
+            result.put(BaccaratBetType.PlayerPair, -1.0D);
         }
         if (pz1.getNum() == pz2.getNum()) {
-            result.put(BaccaratBetType.BankerPair, Double.valueOf(BaccaratBetType.BankerPair.rate));
+            result.put(BaccaratBetType.BankerPair, BaccaratBetType.BankerPair.rate);
         } else {
-            result.put(BaccaratBetType.BankerPair, Double.valueOf(-1.0D));
+            result.put(BaccaratBetType.BankerPair, -1.0D);
         }
         if (px3 == null && pz3 == null) {
             if ((x3 == 9 || x3 == 8) && x3 > z3) {
-                result.put(BaccaratBetType.PlayerBonus, Double.valueOf(1.0D));
+                result.put(BaccaratBetType.PlayerBonus, 1.0D);
             } else if (x3 == z3 && (x3 == 8 || x3 == 9)) {
-                result.put(BaccaratBetType.PlayerBonus, Double.valueOf(0.0D));
+                result.put(BaccaratBetType.PlayerBonus, 0.0D);
             } else {
-                result.put(BaccaratBetType.PlayerBonus, Double.valueOf(-1.0D));
+                result.put(BaccaratBetType.PlayerBonus, -1.0D);
             }
         } else {
             int k = x3 - z3;
             if (k <= 3) {
-                result.put(BaccaratBetType.PlayerBonus, Double.valueOf(-1.0D));
+                result.put(BaccaratBetType.PlayerBonus, -1.0D);
             } else {
-                result.put(BaccaratBetType.PlayerBonus, Double.valueOf(pl[9 - k] - 1.0D));
+                result.put(BaccaratBetType.PlayerBonus, pl[9 - k] - 1.0D);
             }
         }
         if (px3 == null && pz3 == null) {
             if ((z3 == 9 || z3 == 8) && x3 < z3) {
-                result.put(BaccaratBetType.BankerBonus, Double.valueOf(1.0D));
+                result.put(BaccaratBetType.BankerBonus, 1.0D);
             } else if (x3 == z3 && (z3 == 8 || z3 == 9)) {
-                result.put(BaccaratBetType.BankerBonus, Double.valueOf(0.0D));
+                result.put(BaccaratBetType.BankerBonus, 0.0D);
             } else {
-                result.put(BaccaratBetType.BankerBonus, Double.valueOf(-1.0D));
+                result.put(BaccaratBetType.BankerBonus, -1.0D);
             }
         } else {
             int k = z3 - x3;
             if (k <= 3) {
-                result.put(BaccaratBetType.BankerBonus, Double.valueOf(-1.0D));
+                result.put(BaccaratBetType.BankerBonus, -1.0D);
             } else {
-                result.put(BaccaratBetType.BankerBonus, Double.valueOf(pl[9 - k] - 1.0D));
+                result.put(BaccaratBetType.BankerBonus, pl[9 - k] - 1.0D);
             }
         }
         return result;
@@ -627,45 +572,155 @@ public class Baccarat extends Ma {
 
     public Map<BaccaratBetType, Double> getAllOdds() {
         Map<BaccaratBetType, Double> results = new HashMap<>();
-        results.put(BaccaratBetType.Banker, Double.valueOf(rZWin() * (BaccaratBetType.Banker.rate + 1.0D)));
-        results.put(BaccaratBetType.Player, Double.valueOf(rXWin() * (BaccaratBetType.Player.rate + 1.0D)));
-        results.put(BaccaratBetType.Tie, Double.valueOf(rHe() * (BaccaratBetType.Tie.rate + 1.0D)));
-        results.put(BaccaratBetType.BankerPair, Double.valueOf(rPair() * (BaccaratBetType.BankerPair.rate + 1.0D)));
+        results.put(BaccaratBetType.Banker, rZWin() * (BaccaratBetType.Banker.rate + 1.0D));
+        results.put(BaccaratBetType.Player, rXWin() * (BaccaratBetType.Player.rate + 1.0D));
+        results.put(BaccaratBetType.Tie, rHe() * (BaccaratBetType.Tie.rate + 1.0D));
+        results.put(BaccaratBetType.BankerPair, rPair() * (BaccaratBetType.BankerPair.rate + 1.0D));
         results.put(BaccaratBetType.PlayerPair, results.get(BaccaratBetType.BankerPair));
-        results.put(BaccaratBetType.BankerBonus, Double.valueOf(zLongBao()));
-        results.put(BaccaratBetType.PlayerBonus, Double.valueOf(xLongBao()));
-        results.put(BaccaratBetType.Big, Double.valueOf((1.0D - rSmall()) * (BaccaratBetType.Big.rate + 1.0D)));
-        results.put(BaccaratBetType.Small, Double.valueOf(rSmall() * (BaccaratBetType.Small.rate + 1.0D)));
+        results.put(BaccaratBetType.BankerBonus, zLongBao());
+        results.put(BaccaratBetType.PlayerBonus, xLongBao());
+        results.put(BaccaratBetType.Big, (1.0D - rSmall()) * (BaccaratBetType.Big.rate + 1.0D));
+        results.put(BaccaratBetType.Small, rSmall() * (BaccaratBetType.Small.rate + 1.0D));
         return results;
     }
+    public static MockContext mock(int shift,double gate) {
+        Baccarat baccarat = new Baccarat();
+        List<Pocker> pks = Pocker.randomPocker(8);
+        int round = 0;
+        List<Pocker> pz = new ArrayList<>();
+        List<Pocker> px = new ArrayList<>();
+        MockContext total = new MockContext("总");
+        MockContext longBaoContext = new MockContext("龙宝");
+        MockContext smallContext = new MockContext("小");
+        MockContext zContext = new MockContext("庄");
+        MockContext lipaiContext = new MockContext("例牌");
+        MockContext anyPairContext = new MockContext("超级对");
+        int cut =  StringUtils.newRandomInt(416-240, 416-256);
+        while (pks.size()>cut&&round<60) {
+            round++;
 
+            px.add(pks.remove(pks.size() - 1));
+            px.add(pks.remove(pks.size() - 1));
+            pz.add(pks.remove(pks.size() - 1));
+            pz.add(pks.remove(pks.size() - 1));
+
+            int x2 = (px.get(0).getBaccaratDot() + px.get(1).getBaccaratDot()) % 10;
+            int z2 = (pz.get(0).getBaccaratDot() + pz.get(1).getBaccaratDot()) % 10;
+            int x3 = x2;
+            int z3 = z2;
+            if (x2 == 8 || x2 == 9 || z2 == 8 || z2 == 9 || ((x2 == 6 || x2 == 7) && (z2 == 6 || z2 == 7))) {
+                x3 = x2;
+                z3 = z2;
+            } else if (x2 <= 5) {
+                px.add(pks.remove(pks.size() - 1));
+                int i3 = px.get(2).getBaccaratDot();
+                x3 = (x2 + i3) % 10;
+                if (z2 <= 2 || (z2 == 3 && i3 != 8) || (z2 == 4 && i3 != 0 && i3 != 1 && i3 != 8 && i3 != 9) || (z2 == 5 && i3 != 0 && i3 != 1 && i3 != 2 && i3 != 3 && i3 != 8 && i3 != 9) || (z2 == 6 && (i3 == 6 || i3 == 7))) {
+                    pz.add(pks.remove(pks.size() - 1));
+                    z3 = (z2 + pz.get(2).getBaccaratDot()) % 10;
+                } else {
+                    z3 = z2;
+                }
+            } else if (z2 <= 2 || (z2 != 6 && z2 != 7 && z2 < x2)) {
+                pz.add(pks.remove(pks.size() - 1));
+                z3 = (z2 + pz.get(2).getBaccaratDot()) % 10;
+            } else {
+                z3 = z2;
+                x3 = x2;
+            }
+
+//            mockSmal(shift, baccarat, round, pz, px, smallContext, gate);
+            mockLipai(shift, baccarat, round, pz, px, lipaiContext,gate);
+//            mockAnyPair(shift, baccarat, round, pz, px, anyPairContext,gate);
+
+            baccarat.removePocker(px);
+            baccarat.removePocker(pz);
+            px.clear();
+            pz.clear();
+        }
+//        total.merge(smallContext);
+        total.merge(lipaiContext);
+//        total.merge(anyPairContext);
+        return total;
+    }
+    private static boolean mockSmal(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
+        double expXWin = bj.rSmall()*2.5;
+        if(expXWin>=gate) {
+            double result = -1;
+            if(px.size()==2&&pz.size()==2){
+                result +=2.5;
+            }
+            xContext.addCount();
+            xContext.addResult(result);
+            log.info("第{}靴第{}局压{}:{} ---- cnt: {} min: {} max: {}  result: {}   结果 {}  {} - {} "
+                    , shift, round,xContext.getName(),String.format("%.4f",expXWin), xContext.getCount()
+                    , String.format("%.2f",xContext.getMinWin()), String.format("%.2f",xContext.getMaxWin()), String.format("%.2f",xContext.getResult()),String.format("%.2f",result), px,  pz);
+            return true;
+        }
+        return false;
+    }
+    private static boolean mockLipai(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
+        if(round>25)return false;
+        double expLp = bj.expLp();;
+        if(expLp>=gate) {
+            double result = -1;
+            int px2 = px.stream().map(Pocker::getBaccaratDot).reduce((a,b)->a+b).get();
+            int pz2 = pz.stream().map(Pocker::getBaccaratDot).reduce((a,b)->a+b).get();
+            if(px.size()==2&& (px2==8||px2==9||px2==18)||pz.size()==2 && (pz2==8||pz2==9||pz2==18)){
+                result +=2.6;
+            }
+            xContext.addCount();
+            xContext.addResult(result);
+            log.info("第{}靴第{}局压{}:{} ---- cnt: {} min: {} max: {}  result: {}   结果 {}  {} - {} "
+                    , shift, round,xContext.getName(),String.format("%.4f",expLp), xContext.getCount()
+                    , String.format("%.2f",xContext.getMinWin()), String.format("%.2f",xContext.getMaxWin()), String.format("%.2f",xContext.getResult()),String.format("%.2f",result), px,  pz);
+            return true;
+        }
+        return false;
+    }
+    private static boolean mockAnyPair(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
+        if(round>60)return false;
+        double anyPair = bj.rAnyPair()*2.2;
+        if(anyPair>=gate) {
+            double result = -1;
+            Set<Integer> cards = new HashSet<>();
+            cards.add(pz.get(0).getNum());
+            cards.add(pz.get(1).getNum());
+            cards.add(px.get(0).getNum());
+            cards.add(px.get(1).getNum());
+            if(cards.size()<4){
+                result +=2.2;
+            }
+            xContext.addCount();
+            xContext.addResult(result);
+            log.info("第{}靴第{}局压{}:{} ---- cnt: {} min: {} max: {}  result: {}   结果 {}  {} - {} "
+                    , shift, round,xContext.getName(),String.format("%.4f",anyPair), xContext.getCount()
+                    , String.format("%.2f",xContext.getMinWin()), String.format("%.2f",xContext.getMaxWin()), String.format("%.2f",xContext.getResult()),String.format("%.2f",result), px,  pz);
+            return true;
+        }
+        return false;
+    }
     public static void main(String[] arg) throws Exception {
         Baccarat pock = new Baccarat();
         pock.init(8);
-        logger.info("庄{} {}", Double.valueOf(pock.rZWin()), Double.valueOf(pock.rZWin() * 1.95D));
-        logger.info("闲{} {}", Double.valueOf(pock.rXWin()), Double.valueOf(pock.rXWin() * 2.0D));
-        logger.info("平{} {}", Double.valueOf(pock.rHe()), Double.valueOf(pock.rHe() * 9.0D));
-        logger.info("小{} {}", Double.valueOf(pock.rSmall()), Double.valueOf(pock.rSmall() * 2.5D));
-        logger.info("大{} {}", Double.valueOf(1.0D - pock.rSmall()), Double.valueOf((1.0D - pock.rSmall()) * 1.5D));
-        logger.info("对{} {}", Double.valueOf(pock.rPair()), Double.valueOf(pock.rPair() * 12.0D));
-        logger.info("例牌{} {}", Double.valueOf(pock.rZLp()), Double.valueOf(pock.rZLp() * 5.0D));
-        logger.info("闲龙宝 {}", Double.valueOf(pock.xLongBao()));
-        logger.info("庄龙宝 {}", Double.valueOf(pock.zLongBao()));
-        double[] rr = new double[4];
-        //ThreadPool threadPool = new ThreadPool(4);
-       // List<Future<double[]>> futures = new ArrayList<>();
-        for (int shift = 1; shift <= 10000; shift++) {
-            pock.init(8);
-           double[] r = Baccarat.mock(shift,Pocker.randomPocker(8));
-            rr[0] = rr[0] + r[0];
-            rr[1] = rr[1] + r[1];
-            if (rr[1] < rr[2])
-                rr[2] = rr[1];
-            if (rr[1] > rr[3])
-                rr[3] = rr[1];
-            logger.info("shift:{}  total:{}  result:{} min:{} max:{} ",shift, rr[0] , rr[1] , rr[2] , rr[3]);
+        logger.info("庄{} {}", pock.rZWin(), pock.rZWin() * 1.95D);
+        logger.info("闲{} {}", pock.rXWin(), pock.rXWin() * 2.0D);
+        logger.info("平{} {}", pock.rHe(), pock.rHe() * 9.0D);
+        logger.info("小{} {}", pock.rSmall(), pock.rSmall() * 2.5D);
+        logger.info("大{} {}", 1.0D - pock.rSmall(), (1.0D - pock.rSmall()) * 1.5D);
+        logger.info("对{} {}", pock.rPair(), pock.rPair() * 12.0D);
+        logger.info("对{}  {} > 1.2", pock.rAnyPair(), pock.rAnyPair()*2.2);
+        logger.info("例牌{} {}", pock.rLp0()*2, pock.rLp0()*2 * 2.6);
+        logger.info("庄例牌{} {}", pock.rZLp(), pock.rZLp() * 5.0D);
+        logger.info("闲龙宝 {}", pock.xLongBao());
+        logger.info("庄龙宝 {}", pock.zLongBao());
+        MockContext c0 = new MockContext("total");
+        for (int i = 1; i <= 100; i++) {
+            MockContext c = mock(i,1);
+            log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
+            c0.merge(c);
+            log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
         }
-        logger.info("total:{}  result:{} min:{} max:{} ",rr[0] , rr[1] , rr[2] , rr[3]);
     }
 }
 

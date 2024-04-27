@@ -5,6 +5,7 @@ package com.chieffu.pocker;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.security.SecureRandom;
 import java.util.*;
 
 @Data
@@ -76,14 +77,13 @@ public class Pocker implements Serializable {
     public static List<Pocker> getStandardPork() {
         return standard;
     }
-
+    public static Random rd = new SecureRandom();
     public static List<Pocker> randomPocker(int nFupai) {
         List<Pocker> list = new ArrayList<>(nFupai * 64);
         List<Pocker> list0 = getStandardPork();
         for (int i = 0; i < nFupai; i++)
             list.addAll(list0);
-        Random rd = new Random();
-        Collections.shuffle(list, rd);
+         Collections.shuffle(list, rd);
         Collections.shuffle(list, rd);
         return new LinkedList<>(list);
     }

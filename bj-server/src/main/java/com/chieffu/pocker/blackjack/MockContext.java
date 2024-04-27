@@ -3,10 +3,10 @@ package com.chieffu.pocker.blackjack;
 import lombok.Data;
 
 @Data
-class MockContext {
+public class MockContext {
     String name;
 
-    MockContext(String name) {
+    public MockContext(String name) {
         this.name = name;
     }
 
@@ -15,15 +15,15 @@ class MockContext {
     double maxWin = 0.0;
     double minWin = 0.0;
 
-    void addCount() {
+   public void addCount() {
         count++;
     }
 
-    void addCount(double count) {
+   public void addCount(double count) {
         this.count += count;
     }
 
-    void addResult(double d) {
+   public void addResult(double d) {
         result += d;
         if (maxWin < result) {
             maxWin = result;

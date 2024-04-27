@@ -7,10 +7,7 @@ import com.chieffu.pocker.util.ConfigUtil;
 import com.chieffu.pocker.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,18 +23,20 @@ public class MockBlackjack {
 
 
     private static void mockCommon(int shift, int round, Blackjack blackjack, List<Pocker> pz, List<Pocker> px, MockContext commonContext, List<Pocker> pks) throws NotFoundException {
-        double xWin = blackjack.expXWin();
-        double luckyQueue = blackjack.expLuckyQueen(1000, 125, 19, 9, 4);
-        double hotThree = blackjack.expHotThree(100, 20, 4, 2, 1);
-        double luckyThree = blackjack.expLuckThree(100, 40, 30, 10, 5);
-        double pair = blackjack.expPair(25, 8);
-        if (xWin > commonQ||luckyQueue>luckyQueueQ|hotThree>hotThreeQ||luckyThree>luckyThreeQ||pair>pairQ) {
+        double xWin = blackjack.expectation();
+//        double luckyQueue = blackjack.expLuckyQueen(1000, 125, 19, 9, 4);
+//        double hotThree = blackjack.expHotThree(100, 20, 4, 2, 1);
+//        double luckyThree = blackjack.expLuckThree(100, 40, 30, 10, 5);
+//        double pair = blackjack.expPair(25, 8);
+//        if (xWin > commonQ+1||luckyQueue>luckyQueueQ|hotThree>hotThreeQ||luckyThree>luckyThreeQ||pair>pairQ) {
            //log.info("shift {}  round {} pai:{}  rate:{}",shift,round, Arrays.toString(blackjack.getPai()), xWin);
-           blackjack.removePocker(pz.get(0));
-            blackjack.removePocker(px);
+
+
+        if(xWin>2){
             List<Integer> xCards = px.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
             int[] dot = Blackjack.dots(xCards);
-
+            blackjack.removePocker(px);
+            blackjack.removePocker(pz.get(0));
             while (dot[dot.length - 1] <= 11) {
                 Pocker remove = pks.remove(pks.size() - 1);
                 px.add(remove);
@@ -45,44 +44,49 @@ public class MockBlackjack {
                 xCards = px.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
                 dot = Blackjack.dots(xCards);
             }
-            Map<Integer, Double> zRates = Stage.zRate(blackjack.getPai(), pz.get(0).getNum());
+            Blackjack.Stage xStage = Blackjack.Stage.getXStage(xCards);
+            int zcard = pz.get(0).getBlackjackDot();
+            Blackjack.Stage zStage = Blackjack.Stage.getZStage(Collections.singletonList(zcard));
 
-            double currentWinRate = Stage.getCurrentWinRate(dot[dot.length - 1], zRates);
-           if(printLog) log.info("当前 【 {} 】,赢面为{}",dot[dot.length-1],String.format("%.3f",currentWinRate));
-            Stage xStage = Stage.getXStage(xCards);
-            double oneMoreCardWinRate = xStage==null?0:Stage.xWinRate(zRates, xStage.oneMoreCardRateMap(blackjack.getPai()));
-            if(printLog) log.info("加一张牌赢面为{}",String.format("%.3f",oneMoreCardWinRate));
+            double currentWinRate = xStage.getXCurrentWinRate(zStage,blackjack.getPai());
+            double oneMoreCardWinRate = xStage.getOneMoreCardWinRate(zStage,blackjack.getPai());
+            if(printLog) log.info("{}靴{}把压{} 真数：{}  闲{}{} 庄[{}]  当前胜率为{}，加一张胜率为{}  ", shift, round, commonContext.getName(), String.format("%.3f",xWin), px,dot[dot.length-1],pz.get(0),String.format("%.4f",currentWinRate), String.format("%.4f",oneMoreCardWinRate));
             int doubleBet = 1;
-            if(oneMoreCardWinRate>0.5 && oneMoreCardWinRate>currentWinRate){
+            boolean touXiang = xCards.size()==2&&Math.max(currentWinRate,oneMoreCardWinRate)<0.25;
+            if(touXiang){
+                log.info("投降输一半");
+            }else  if(oneMoreCardWinRate>0.5 && oneMoreCardWinRate>currentWinRate){
                 log.info("加倍下注");
                 doubleBet = 2;
             }
-            while (currentWinRate < oneMoreCardWinRate) {
+            while (!touXiang && currentWinRate < oneMoreCardWinRate) {
                 Pocker remove = pks.remove(pks.size() - 1);
                 px.add(remove);
                 blackjack.removePocker(remove);
-                xCards = px.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
+                xCards = px.stream().map(p -> Blackjack.dot(p)).collect(Collectors.toList());
                 dot = Blackjack.dots(xCards);
-                zRates = Stage.zRate(blackjack.getPai(), pz.get(0).getNum());
-                currentWinRate = Stage.getCurrentWinRate(dot[dot.length - 1], zRates);
-                xStage = Stage.getXStage(xCards);
-                oneMoreCardWinRate = xStage == null ? 0 : Stage.xWinRate(zRates, xStage.oneMoreCardRateMap(blackjack.getPai()));
-                if(printLog) log.info("当前 【 {} 】,赢面为{}",dot[dot.length-1],String.format("%.3f",currentWinRate));
-                if(doubleBet==2)break;
-                if(printLog) log.info("加一张牌赢面为{}",String.format("%.3f",oneMoreCardWinRate));
-
-           }
+                xStage = Blackjack.Stage.getXStage(xCards);
+                if(xStage==null){
+                    break;
+                }
+                currentWinRate = xStage.getXCurrentWinRate(zStage, blackjack.getPai());
+                oneMoreCardWinRate = xStage.getOneMoreCardWinRate(zStage, blackjack.getPai());
+                if(printLog) log.info("{}靴{}把压{} 真数：{}  闲{}{} 庄[{}]  当前胜率为{}，加一张胜率为{}  ", shift, round, commonContext.getName(), String.format("%.3f",xWin), px,dot[dot.length-1],pz.get(0),String.format("%.4f",currentWinRate), String.format("%.4f",oneMoreCardWinRate));
+                if (doubleBet == 2) break;
+            }
 
             List<Integer> zCards = pz.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
             blackjack.removePocker(pz.get(1));
-            while (!Stage.isFinalZStage(zCards)) {
+            while (!Blackjack.Stage.isFinalZStage(zCards)) {
                 Pocker remove = pks.remove(pks.size() - 1);
                 pz.add(remove);
                 blackjack.removePocker(remove);
                 zCards = pz.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
             }
            double r = 0;
-            if (Blackjack.isBlackjack(zCards) && Blackjack.isBlackjack(xCards)) {
+            if(touXiang){
+                r = -0.5;
+            }else if (Blackjack.isBlackjack(zCards) && Blackjack.isBlackjack(xCards)) {
 
             } else if (Blackjack.isBlackjack(zCards)) {
                 r=-1;
@@ -104,11 +108,9 @@ public class MockBlackjack {
             r = r*doubleBet;
             commonContext.addResult(r);
             commonContext.addCount();
-            if(printLog) log.info("{}靴{}把压{} 期望：{}  结果 {}  当前 max:{}  min:{}  result:{}  庄：{} - 闲：{} ", shift, round, commonContext.getName(), String.format("%.3f",xWin), r,commonContext.getMaxWin(),commonContext.getMinWin(),r, pz, px);
-
-        }else{
-            blackjack.removePocker(px);
-            blackjack.removePocker(pz);
+            if(printLog) log.info("{}靴{}把压{} 真数：{}  结果 {}  当前 max:{}  min:{}  result:{}  庄：{} - 闲：{} ", shift, round, commonContext.getName(), String.format("%.3f",xWin), r,commonContext.getMaxWin(),commonContext.getMinWin(),r, pz, px);
+            blackjack.addPocker(px);
+            blackjack.addPocker(pz);
 
         }
     }
@@ -243,7 +245,7 @@ public class MockBlackjack {
     }
 
 
-    private static MockContext mock(int shift, Blackjack bj) throws NotFoundException {
+    private static MockContext mock(int shift) throws NotFoundException {
         List<Pocker> pks = Pocker.randomPocker(8);
         Blackjack blackjack = new Blackjack(pks.size() / 52);
         int round = 0;
@@ -264,18 +266,14 @@ public class MockBlackjack {
             pz.add(pks.remove(pks.size() - 1));
             pz.add(pks.remove(pks.size() - 1));
 
-            mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
-
-            //            mockPair(shift, round, blackjack, px, px, pairContext);
-            mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
+//            mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
+//            mockPair(shift, round, blackjack, px, px, pairContext);
+//            mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
 //            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
 
-//            mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
+            mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
 //            mockBloom(shift, round, blackjack, pz, px, bloomContext);
-            int removeCards = StringUtils.newRandomInt(0,5);
-            for(int i=0;i<removeCards;i++){
-                px.add(pks.remove(pks.size()-1));
-            }
+
             blackjack.removePocker(px);
             blackjack.removePocker(pz);
 
@@ -306,9 +304,8 @@ public class MockBlackjack {
             luckyQueueQ = Double.parseDouble(ConfigUtil.getSetting("mock.luckyQueue.q", "1.1"));
             times = Integer.parseInt(ConfigUtil.getSetting("mock.times", "20"));
             MockContext c0 = new MockContext("total");
-            for (int i = 1; i <= 10000; i++) {
-                Blackjack bj = new Blackjack(8);
-                MockContext c = mock(i, bj);
+            for (int i = 1; i <= 100; i++) {
+                MockContext c = mock(i);
                 log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), c.getMaxWin(), c.getMinWin(), c.getResult());
                 c0.merge(c);
                 log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), c0.getMaxWin(), c0.getMinWin(), c0.getResult());
