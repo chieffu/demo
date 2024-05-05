@@ -15,6 +15,12 @@ public class MockContext {
     double maxWin = 0.0;
     double minWin = 0.0;
 
+    double even;
+
+    double win;
+
+    double lose;
+
    public void addCount() {
         count++;
     }
@@ -31,15 +37,28 @@ public class MockContext {
         if (minWin > result) {
             minWin = result;
         }
+        if(d>0){
+            win++;
+        }else if(d<0){
+            lose++;
+        }else {
+            even++;
+        }
     }
 
     public void merge(MockContext c) {
         this.addResult(c.getResult());
         this.addCount(c.getCount());
+        this.win+=c.win;
+        this.lose+=c.lose;
+        this.even+=c.even;
     }
 
     public void merge(MockContext c, int times) {
         this.addResult(c.getResult() * times);
         this.addCount(c.getCount() * times);
+        this.win+=c.win;
+        this.lose+=c.lose;
+        this.even+=c.even;
     }
 }

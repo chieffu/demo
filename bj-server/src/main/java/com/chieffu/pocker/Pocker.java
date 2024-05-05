@@ -83,7 +83,10 @@ public class Pocker implements Serializable {
         List<Pocker> list0 = getStandardPork();
         for (int i = 0; i < nFupai; i++)
             list.addAll(list0);
-         Collections.shuffle(list, rd);
+        Collections.shuffle(list, rd);
+        Collections.shuffle(list, rd);
+        Collections.shuffle(list, rd);
+        Collections.shuffle(list, rd);
         Collections.shuffle(list, rd);
         return new LinkedList<>(list);
     }

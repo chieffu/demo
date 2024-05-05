@@ -179,18 +179,18 @@ public class Blackjack extends Ma {
         public double getXCurrentWinRate( Stage zStage, int[] pai) {
             Integer xCurrentDot = this.largeDot();
             if(xCurrentDot>21)return 0.0;
-          //  Map<Integer,Double> zrates = Blackjack.zRate(pai, zStage.largeDot());
             List<Stage> zEndStages = zStage.getEndStage();
             List<Stage> xWinZEndStages = zEndStages.stream().filter(s->s.largeDot()< xCurrentDot ||s.largeDot()>21).collect(Collectors.toList());
             double currentWinRate1 = 0.0;
             for(Stage s:xWinZEndStages){
                 currentWinRate1+=s.rateToP(pai, zStage);
             }
+            double evenRate = 0.0;
             List<Stage> xEqZEndStages = zEndStages.stream().filter(s->s.largeDot()== xCurrentDot &&!s.isBj()).collect(Collectors.toList());
             for(Stage s:xEqZEndStages){
-                currentWinRate1+=s.rateToP(pai, zStage)*0.5;
+                evenRate+=s.rateToP(pai, zStage);
             }
-            return currentWinRate1;
+            return currentWinRate1+evenRate*0.5;
         }
         public double getOneMoreCardWinRate(Stage zStage, int[] pai) {
             double oneMoreCardWinRate1 = 0.0;
@@ -202,6 +202,7 @@ public class Blackjack extends Ma {
                     double r0 = pai[xSubCard]-- / total--;
                     oneMoreCardWinRate1 += r0 * xSubStage.getXCurrentWinRate(zStage, pai);
                     pai[xSubCard]++;
+                    total++;
                 }
             }
             return oneMoreCardWinRate1;
@@ -393,7 +394,50 @@ public class Blackjack extends Ma {
             addZSubStage(stages);
             return root;
         }
+        public static double xWinRate(int[] pai, List<Integer> cards, int zCard) {
+            Stage root = getXStage(cards);
+            if (root == null) return 0.0;
+            Map<Integer, Double> zRates = zRate(pai, zCard);
 
+            List<Stage> middleStages = root.getXMiddleStage();//12-21点的中间点
+            Map<Integer, List<Stage>> groups = middleStages.stream().collect(Collectors.groupingBy(stage -> stage.largeDot()));
+            double result = 0.0;
+            for (Integer i : groups.keySet()) {
+                double currentWinRate = getCurrentWinRate(i, zRates);
+                List<Stage> stages1 = groups.get(i);
+                for (Stage s : stages1) {
+                    double rateS = (s.zRate(pai)/root.zRate(pai));
+                    Map<Integer, Double> xRates1 = s.oneMoreCardRateMap(pai);
+                    double oneMoreCardWinRate = Blackjack.xWinRate(zRates, xRates1);
+                    result += rateS * Math.max(currentWinRate, oneMoreCardWinRate);
+                }
+            }
+            return result;
+        }
+        public static Map<Integer, Double> zRate(int[] pai, Integer currentDot) {
+            String key = Arrays.toString(pai) + currentDot;
+            Map<Integer, Double> cache = zRateCache.get(key);
+            if (cache!=null) {
+                return cache;
+            }
+            List<Stage> stages = getZEndStage(currentDot);
+            Map<Integer, Double> rates = new HashMap<>();
+            if (stages != null) {
+                Map<Integer, List<Stage>> groups = stages.stream().collect(Collectors.groupingBy(stage -> stage.largeDot()));
+                for (Integer i : groups.keySet()) {
+                    List<Stage> stages1 = groups.get(i);
+                    double rate = 0.0;
+                    for (Stage s : stages1) {
+                        double r = s.zRate(pai);
+                        rate += r;
+                    }
+                    rates.put(i, rate);
+                }
+            }
+            zRateCache.put(key, rates);
+            return rates;
+
+        }
     }
 
 
@@ -549,6 +593,7 @@ public class Blackjack extends Ma {
             if(dotI>21)continue;
             List<Stage> xStages = xMiddleStageMap.get(dotI);
             for (Stage xStage : xStages) {
+                if(xStage.isBj())continue;
                 if(xStage.isBj())continue;
                 double xCurrentRate = 1.0;
                 List<Integer> xcards = xStage.getCards();
@@ -1046,14 +1091,10 @@ public class Blackjack extends Ma {
     }
 
     public double expXWin(List<Integer> xCards, int zCard) {
-//        double zNotBj = (1 - (zCard == 1 ? countPai(10) / (double) countPai() : zCard == 10 ? countPai() : 0));
-//        if (isBlackjack(xCards))
-//            return zNotBj * 2.5 + (1 - zNotBj);
-//        return xWinRate(pai, xCards, zCard) * 2;
-//         Map<Integer,Double> zRates = Stage.zRate(pai,zCard);
-//         return Stage.xWinRate(zRates,xRates) * 2  ;
-////         double rate = getXEndStage(xCurrent).stream().map(s->s.xRate(pai)).reduce((a, b) -> a + b).get();
-        return 0.0;
+        double zNotBj = (1 - (zCard == 1 ? countPai(10) / (double) countPai() : zCard == 10 ? countPai() : 0));
+        if (isBlackjack(xCards))
+            return zNotBj * 2.5 + (1 - zNotBj);
+        return Stage.xWinRate(pai, xCards, zCard) * 2;
     }
 
     public double rBjWin() {
@@ -1116,11 +1157,14 @@ public class Blackjack extends Ma {
     }
 
     public double expectation(){
-        double big = pai[1]+pai[10];
-        double small = pai[2]+pai[3]+pai[4]+pai[5]+pai[6];
-        double equal = pai[7]+pai[8]+pai[9];
-        return (big-small)*52/(big+small+equal);
+        return (pai[10]+pai[1]-pai[2]-pai[3]-pai[4]-pai[4]-pai[6])*52/(double)countPai();
+       /* double big = pai[10]*2;
+        double small = (pai[4]+pai[5]+pai[6])*2;
+        double middle = (pai[2]+pai[3]+pai[7]);
+        double equal = pai[9];
+        return (big+equal-small-middle)*52/(countPai()) ;*/
     }
+
     private static void test0() {
         Blackjack blackjack = new Blackjack(8);
         double sum2 = 0;
@@ -1163,8 +1207,8 @@ public class Blackjack extends Ma {
        // log.info("expXWin spend time:{}",System.currentTimeMillis()-start);
         int t = 0;
         for(int i=2;i<=6;i++){
-            int n = StringUtils.newRandomInt(2,6);
-            n=2;
+            int n = StringUtils.newRandomInt(4,6);
+//            n=2;
             blackjack.pai[i]-=n;
             t+=blackjack.pai[i];
         }

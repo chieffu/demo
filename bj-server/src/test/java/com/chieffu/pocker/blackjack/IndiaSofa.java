@@ -135,6 +135,7 @@ public class IndiaSofa extends Blackjack {
         return mockContext;
     }
 
+
     private static double yindu6he() {
         double all = c(52, 6);
         double kFlush = 4 * c(52 - 5, 1) / all;

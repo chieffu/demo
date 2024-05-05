@@ -2,6 +2,7 @@ package com.chieffu.pocker.baccarat;
 
 import com.chieffu.pocker.Ma;
 import com.chieffu.pocker.Pocker;
+import com.chieffu.pocker.SuitEnum;
 import com.chieffu.pocker.blackjack.MockContext;
 import com.chieffu.pocker.util.StringUtils;
 import org.slf4j.Logger;
@@ -643,6 +644,125 @@ public class Baccarat extends Ma {
 //        total.merge(anyPairContext);
         return total;
     }
+
+    public double rOdds(){
+        int total = countPai();
+        double odds = 0;
+        for(int i=1;i<=13;i+=2){
+            odds+= Arrays.stream(pk[i-1]).sum();
+        }
+        return odds/total;
+    }
+    public double rEven(){
+        int total = countPai();
+        double even = 0;
+        for(int i=2;i<=13;i+=2){
+            even+= Arrays.stream(pk[i-1]).sum();
+        }
+        return even/total;
+    }
+    public double rRed(){
+        int total = countPai();
+        double red  = 0;
+        for(int i=1;i<=13;i++){
+            red+=pk[i-1][1];
+            red+=pk[i-1][3];
+        }
+        return red/total;
+    }
+
+    public double rBlack(){
+        int total = countPai();
+        double black  = 0;
+        for(int i=1;i<=13;i++){
+            black+=pk[i-1][0];
+            black+=pk[i-1][2];
+        }
+        return black/total;
+    }
+    public static MockContext mockLongHu(int shift,double gate) {
+        Baccarat baccarat = new Baccarat();
+        List<Pocker> pks = Pocker.randomPocker(8);
+        int round = 0;
+        MockContext total = new MockContext("总");
+        MockContext redContext = new MockContext("红");
+        MockContext blackContext = new MockContext("黑");
+        MockContext oddsContext = new MockContext("单");
+        MockContext evenContext = new MockContext("双");
+        while (round<60) {
+            round++;
+            Pocker px = pks.remove(pks.size() - 1);
+            Pocker pz = pks.remove(pks.size()-1);
+
+            if(baccarat.rOdds()*1.75>gate){
+                oddsContext.addCount(2);
+                double r = 0;
+                if(px.getNum()%2==1){
+                    r+=0.75;
+                }else{
+                    r-=1;
+                }
+                if(pz.getNum()%2==1){
+                    r+=0.75;
+                }else{
+                    r-=1;
+                }
+                oddsContext.addResult(r);
+            }else if(baccarat.rEven()*2.05>gate){
+                evenContext.addCount(2);
+                double r = 0;
+                if(px.getNum()%2==0){
+                    r+=1.05;
+                }else{
+                    r-=1;
+                }
+                if(pz.getNum()%2==0){
+                    r+=1.05;
+                }else{
+                    r-=1;
+                }
+                evenContext.addResult(r);
+            }
+            if(baccarat.rRed()*1.9>gate){
+                redContext.addCount(2);
+                double r = 0;
+                if(px.getSuit()== SuitEnum.HEART||px.getSuit()==SuitEnum.DIAMOND){
+                    r+=0.9;
+                }else{
+                    r-=1;
+                }
+                if(pz.getSuit()==SuitEnum.HEART||pz.getSuit()==SuitEnum.DIAMOND){
+                    r+=0.9;
+                }else {
+                    r-=1;
+                }
+                redContext.addResult(r);
+            }else if(baccarat.rBlack()*1.9>gate){
+                blackContext.addCount(2);
+                double r = 0;
+                if(px.getSuit()== SuitEnum.SPADE||px.getSuit()==SuitEnum.CLUB){
+                    r+=0.9;
+                }else{
+                    r-=1;
+                }
+                if(pz.getSuit()== SuitEnum.SPADE||pz.getSuit()==SuitEnum.CLUB){
+                    r+=0.9;
+                }else {
+                    r-=1;
+                }
+                blackContext.addResult(r);
+            }
+
+            baccarat.removePocker(px);
+            baccarat.removePocker(pz);
+
+        }
+        total.merge(redContext);
+        total.merge(blackContext);
+        total.merge(oddsContext);
+        total.merge(evenContext);
+        return total;
+    }
     private static boolean mockSmal(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
         double expXWin = bj.rSmall()*2.5;
         if(expXWin>=gate) {
@@ -715,8 +835,8 @@ public class Baccarat extends Ma {
         logger.info("闲龙宝 {}", pock.xLongBao());
         logger.info("庄龙宝 {}", pock.zLongBao());
         MockContext c0 = new MockContext("total");
-        for (int i = 1; i <= 100; i++) {
-            MockContext c = mock(i,1);
+        for (int i = 1; i <= 10000; i++) {
+            MockContext c = mockLongHu(i,1.00);
             log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
             c0.merge(c);
             log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
