@@ -119,7 +119,7 @@ public class Blackjack extends Ma {
             stage.pai = card;
             stage.parent = this;
             stage.dot = stage.dot();
-            if (stage.largeDot() > 21 || stage.getCards().size() > 7) return null;
+            if (stage.largeDot() >= 21 ) return null;
             next.add(stage);
             if (stage.largeDot() < 21) {
                 stage.next = new LinkedList<>();
@@ -1082,7 +1082,7 @@ public class Blackjack extends Ma {
      * @return
      */
     public double expXWin0() {
-        return xWinRateWithoutBJ(pai, new ArrayList<>(), 0) * 2 + rBjWin() * 2.5;
+        return xWinRateWithoutBJ(pai, new ArrayList<>(), 0) * 2 + rBjWin() * 2.5 +rBjHe();
 //         Map<Integer,Double> zRates = Stage.zRate(pai,0);
 //         return Stage.xWinRate(zRates,xRates) * 2 + rBjWin() * 1.25 ;
 //         double rate = getXEndStage(0).stream().map(s->s.xRate(pai)).reduce((a, b) -> a + b).get();
@@ -1157,12 +1157,23 @@ public class Blackjack extends Ma {
     }
 
     public double expectation(){
-        return (pai[10]+pai[1]-pai[2]-pai[3]-pai[4]-pai[4]-pai[6])*52/(double)countPai();
-       /* double big = pai[10]*2;
+        double highLowCardExpectation = highLowCardCounting();
+        if(highLowCardExpectation>1){
+
+        }
+        return omegaIICardCounting();
+    }
+
+    public double highLowCardCounting() {
+       return (pai[10] + pai[1] - pai[2] - pai[3] - pai[4] - pai[5] - pai[6]) * 52/ (double) countPai();
+    }
+
+    public double omegaIICardCounting() {
+        double big = pai[10]*2;
         double small = (pai[4]+pai[5]+pai[6])*2;
         double middle = (pai[2]+pai[3]+pai[7]);
         double equal = pai[9];
-        return (big+equal-small-middle)*52/(countPai()) ;*/
+        return (big + equal - small - middle) * 52 / (countPai()) ;
     }
 
     private static void test0() {
@@ -1227,7 +1238,7 @@ public class Blackjack extends Ma {
         log.info("count of all zStage:{} ", zStage.getStageCount());
         log.info("spend time:{}", System.currentTimeMillis() - start);
 //        test0();
-        test1();
+//        test1();
 
     }
 
