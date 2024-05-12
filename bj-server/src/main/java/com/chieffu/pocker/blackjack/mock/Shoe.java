@@ -1,10 +1,9 @@
 package com.chieffu.pocker.blackjack.mock;
 
 import com.chieffu.pocker.Pocker;
+import com.chieffu.pocker.bj.Qlearning;
 import com.chieffu.pocker.blackjack.Blackjack;
 import com.chieffu.pocker.blackjack.NotFoundException;
-import com.chieffu.pocker.project.MyQlearning;
-import com.chieffu.pocker.project.Qlearning;
 import com.chieffu.pocker.util.StringUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -18,50 +17,36 @@ import java.util.List;
 public class Shoe extends Blackjack {
     List<Pocker> cards ;
     static Qlearning algorithm = initQlearning();
+    static com.chieffu.pocker.project.Qlearning projectAlgorithm = initQlearning2();
+
+    int cut;
+
     public Shoe(int n) {
         super(n);
         cards = Pocker.randomPocker(n);
-
+        cut = (int)(Math.random()*(180-60))+60;
     }
 
     private static Qlearning initQlearning() {
-        Qlearning algorithm = new MyQlearning();
-
-//        int episodes = 1500000;
-//        double eta = 0.01;
-//        double gamma = 0.01;
-//        double epsilonStart = 1.0;
-//        double epsilonMin   = 0.1;
-//        double epsilonDelta = 0.01;
-//        int epsilonEvery = (int)(episodes * epsilonDelta);
-//
-//        algorithm.train(episodes, eta, gamma, epsilonStart, epsilonMin, epsilonDelta, epsilonEvery);
-
-//        algorithm.loadQ("q-1.4");
-        algorithm.loadQ("q-2.9");
-        int  n = 0;
-        int t = 0;
-        for(int i=0;i<algorithm.getQ().length;i++){
-            for(int j=0;j<algorithm.getQ()[i].length;j++) {
-                if(algorithm.getQ()[i][j]==0){
-                    n++;
-                }
-                t++;
-            }
-        }
-        log.info("{} / {}  {}",n,t,n*100.0/t);
-        double[] winningQ = algorithm.test(400000);
-        double[] winningR = algorithm.randomTest(10000);
+        Qlearning algorithm = new Qlearning();
+        algorithm.loadQ("qq-2.0.0");
+//        algorithm.loadQ("q-3.0.0");
+//        algorithm.loadQ("q-4.0.0");
+//        algorithm.printQ();
+        double[] winningQ = algorithm.test(100000);
 
         System.out.println("----- Wins -----");
-        System.out.println("Qlearn    Random");
-        System.out.printf("%5.2f%%    %5.2f%% (win-loss)%n", winningQ[0]*100, winningR[0]*100);
-        System.out.printf("%5.2f%%    %5.2f%% (win-push-loss)%n%n", winningQ[1]*100, winningR[1]*100);
-
+        System.out.printf("%5.2f%%    %5.2f%% (win-loss)%n", winningQ[0]*100, winningQ[0]*100);
         return algorithm;
     }
 
-    int cut;
+
+    private static com.chieffu.pocker.project.Qlearning initQlearning2() {
+        com.chieffu.pocker.project.Qlearning algorithm = new com.chieffu.pocker.project.Qlearning();
+        algorithm.loadQ("q-1.0.0");
+        algorithm.prettyPrintQ(false);
+        return algorithm;
+    }
 
     public void cut(){
         this.cut =  StringUtils.newRandomInt(140, 170);
@@ -82,22 +67,14 @@ public class Shoe extends Blackjack {
 
     public boolean shouldPlayerHit(Player player,Dealer dealer){
         if(player.getHandValue()>=21)return false;
-        int state = Blackjack.dot(dealer.getFirstCard());
-        state += (player.getHandMinValue() << 5);
-        if (player.hasAce()) {
-            state += 16;
-        }
-        if(algorithm instanceof MyQlearning){
-            int count  = (int)this.highLowCardCounting();
-            if(count<-7)count=-7;
-            if(count>7)count=7;
-           state = MyQlearning.encode(dealer.getFirstCard().getBaccaratDot(),player.getHandMinValue(),player.hasAce(),count);
-        }
-        double stand = this.algorithm.getQ()[state][0];
-        double hit = this.algorithm.getQ()[state][1];
-        boolean result = hit>stand;
-        if(result)return true;
-//        //if(player.getHandValue()>21)return false;
+        double highLow = this.highLowCardCounting();
+//        if(highLow<-3) {
+            boolean highLowHit = shouldHighLowHit(player, dealer);
+            if(highLowHit)return true;
+//        }else {
+//            boolean result = shouldOmegaHit(player, dealer);
+//            if (result) return true;
+//        }
         Blackjack.Stage xStage = Blackjack.Stage.getXStage(player.getCardNums());
         if(xStage==null){
             return false;
@@ -109,6 +86,49 @@ public class Shoe extends Blackjack {
         boolean shouldHit = oneMoreCardWinRate>currentWinRate;
         return shouldHit;
     }
+
+    private boolean shouldHighLowHit(Player player, Dealer dealer) {
+
+        int state = dealer.getFirstCard().getBlackjackDot();
+        state += (player.getHandMinValue() << 5);
+        if (player.hasAce()) {
+            state += 16;
+        }
+        double[] q = projectAlgorithm.getQ()[state];
+        double hit = q[1];
+        double stand = q[0];
+        return hit > stand;
+    }
+
+    private boolean shouldOmegaHit(Player player, Dealer dealer) {
+        int[] state = new int[4];
+        int i=0;
+        state[i++]= dealer.getFirstCard().getBlackjackDot();
+        state[i++]= player.getHandValue();
+        state[i++]= player.hasAce()?1:0;
+
+//      int h_l =  (int)(shoe.highLowCardCounting());
+//      if(h_l>7)h_l=7;
+//      else if(h_l<-7)h_l=-7;
+        int ome = (int)(this.omegaIICardCounting());
+        if(ome>15)ome=15;
+        else if(ome<-15){
+            ome=-15;
+        }
+        state[i++]=ome;
+        StringBuffer s = new StringBuffer();
+        for ( i = 0; i < state.length; i++) {
+            if(i!=0)s.append(" ");
+            s.append(state[i]);
+        }
+        String name = s.toString();
+        double[] q = this.algorithm.getQMap().getOrDefault(name,new double[2]);
+        double hit = q[0];
+        double stand = q[1];
+        boolean result = hit>stand;
+        return result;
+    }
+
     public double getPlayerOneMoreCardWinRate(Player player,Dealer dealer){
         Blackjack.Stage xStage = Blackjack.Stage.getXStage(player.getCardNums());
         if(xStage==null)return 0;
@@ -117,7 +137,7 @@ public class Shoe extends Blackjack {
     }
 
     public boolean ShouldPlayerSplit(Player player,Dealer dealer){
-        if(player.getCards().get(0).getNum()==player.getCards().get(1).getNum()){
+        if(player.getCards().size()==2&&player.getCards().get(0).getNum()==player.getCards().get(1).getNum()){
             double splitWin0 = expXWin(Arrays.asList(player.getCards().get(0).getBlackjackDot()),Blackjack.dot(dealer.getFirstCard()));
             if(splitWin0>1.02){
                 log.info("闲{} 庄 {}  对子拆分后胜率 {}", player.getCards(),dealer.getCards(),splitWin0);
@@ -196,5 +216,9 @@ public class Shoe extends Blackjack {
         while(dealer.shouldHit()){
             dealer.hit(drawCard());
         }
+    }
+
+    public boolean isOver() {
+        return this.cards.size()<=cut;
     }
 }

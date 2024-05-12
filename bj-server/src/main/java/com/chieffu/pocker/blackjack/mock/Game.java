@@ -2,15 +2,18 @@ package com.chieffu.pocker.blackjack.mock;
 
 import com.chieffu.pocker.blackjack.MockContext;
 import com.chieffu.pocker.blackjack.NotFoundException;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
 public class Game {
     public static boolean printLog = true;
+
     public static void main(String[] args) throws NotFoundException {
         Game game = new Game();
         game.printLog=false;
-        game.mockRound(5000);
+        game.mockRound(2000);
 
     }
     public MockContext mockRound(int n) throws NotFoundException {
@@ -40,8 +43,8 @@ public class Game {
             player.hit(shoe.drawCard());
             dealer.hit(shoe.drawCard());
             double highLowCardCounting = shoe.highLowCardCounting();
-            double omegaIICardCounting = shoe.omegaIICardCounting();
-            if(highLowCardCounting > 3 ){
+            double omegaIICardCounting = shoe.myCardCounting();
+            if(highLowCardCounting<-3){
                 double result = shoe.play(player,dealer);
                 commonContext.addCount();
                 commonContext.addResult(result);

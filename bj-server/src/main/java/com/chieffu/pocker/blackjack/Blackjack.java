@@ -1168,6 +1168,9 @@ public class Blackjack extends Ma {
        return (pai[10] + pai[1] - pai[2] - pai[3] - pai[4] - pai[5] - pai[6]) * 52/ (double) countPai();
     }
 
+    public double myCardCounting(){
+        return (pai[1]+pai[2]+pai[3]+pai[4]+pai[5]+pai[6]-pai[8]-pai[9]-pai[10])*52/(double)countPai();
+    }
     public double omegaIICardCounting() {
         double big = pai[10]*2;
         double small = (pai[4]+pai[5]+pai[6])*2;

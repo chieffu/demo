@@ -55,6 +55,9 @@ public class Player {
     public void discardHand() {
         hand = new ArrayList<>();
     }
+    public boolean shouldHit() {
+        return getHandValue() < 12;
+    }
 
     public void hit(Card card) {
         hand.add(card);

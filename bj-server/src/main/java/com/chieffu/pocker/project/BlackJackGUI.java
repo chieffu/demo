@@ -205,7 +205,7 @@ public class BlackJackGUI extends JPanel
                 pcardPanel.repaint();
                 pcardPanel.revalidate();
 
-                if (game.getScore() == -1) {
+                if (game.getScore() <0 ) {
                     winlosebox.setText("Bust");
                     nextbutton.setEnabled(false);
                     dealbutton.setEnabled(true);
@@ -233,7 +233,7 @@ public class BlackJackGUI extends JPanel
                 if (dealer.getHandValue() > 21) {
                     winlosebox.setText("Dealer busts");
                 }
-                else if (game.getScore() == -1) {
+                else if (game.getScore() < 0) {
                     winlosebox.setText("Dealer wins");
                 }
                 else if (game.getScore() == 0) {

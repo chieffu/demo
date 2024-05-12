@@ -1,6 +1,8 @@
 package com.chieffu.pocker.project;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The Qlearning class
@@ -11,6 +13,7 @@ import java.io.*;
  * 5. Profit.
  */
 public class Qlearning {
+
 
     protected double[][] q;
     protected int ACTIONS = 2; // [0] = stand, [1] = hit
@@ -44,7 +47,7 @@ public class Qlearning {
         int state;
         int stateNew;
         int action;
-        int reward;
+        double reward;
 
         System.out.printf("%nLearning Q-style    .    .    .    .    .%9d %n", episodes);
 
@@ -148,37 +151,6 @@ public class Qlearning {
         return q;
     }
 
-    /**
-     * Get the Q values for states with an Ace.
-     * @return The (sub)Q table.
-     */
-    public double[][] getQAce() {
-        double[][] qA = new double[21+1][10+1];
-        for (int i = 2; i <= 21; i++) {
-            for (int j = 1; j <= 10; j++) {
-                int state = (i << 5) + (1 << 4) + j;
-                qA[i][j] = q[state][0] - q[state][1];
-            }
-        }
-
-        return qA;
-    }
-
-    /**
-     * Get the Q values for states with no Ace.
-     * @return The (sub)Q table.
-     */
-    public double[][] getQNoAce() {
-        double[][] qNA = new double[21+1][10+1];
-        for (int i = 4; i <= 21; i++) {
-            for (int j = 1; j <= 10; j++) {
-                int state = (i << 5) + j;
-                qNA[i][j] = q[state][0] - q[state][1];
-            }
-        }
-
-        return qNA;
-    }
 
     /**
      * Pretty Print the Q table.
@@ -196,15 +168,7 @@ public class Qlearning {
                 if (i % 16 == 1) {
                     System.out.println();
                 }
-                if (printValues) {
-                    System.out.printf("%10s %8.3f %8.3f %n", unGetState(i), stand, hit);
-                } else {
-                    if (stand > hit) {
-                        System.out.printf("%10s %6s %7s %n", unGetState(i), "X", "-");
-                    } else {
-                        System.out.printf("%10s %6s %7s %n", unGetState(i), "-", "X");
-                    }
-                }
+                System.out.println(String.format("%10s %8.3f %8.3f | %6s %7s", unGetState(i), stand, hit, stand>hit?"X":"-", stand>hit?"-":"X"));
             }
         }
         System.out.println();

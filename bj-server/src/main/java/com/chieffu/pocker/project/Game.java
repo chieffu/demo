@@ -3,6 +3,7 @@ package com.chieffu.pocker.project;
 import lombok.Getter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by Zosit on 11/22/2017.
@@ -36,7 +37,9 @@ public class Game {
 
         player = new Player();
         dealer = new Dealer();
-
+        for(int i=0;i<shoe.getCut();i++){
+            shoe.drawCard();
+        }
         dealCards();
     }
     int score;
