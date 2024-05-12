@@ -11,6 +11,7 @@ out/ # IntelliJ IDEA 输出目录
 bj-server/target/ # Maven 或其他构建工具生成的输出目录
 */build/ # Gradle 构建目录
 
+
 # 日志和快照数据
 **/logs/
 *.log
