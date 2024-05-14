@@ -69,6 +69,6 @@ public class Shoe {
     return (big + equal - small - middle) * 52 / (double)shoe.size() ;
   }
   public double myCardCounting(){
-    return (cardCount[1]+cardCount[2]+cardCount[3]+cardCount[4]+cardCount[5]+cardCount[0]-cardCount[7]-cardCount[8]-cardCount[9]-cardCount[10]-cardCount[11]-cardCount[12])*52/(double)shoe.size();
+    return (cardCount[1]+cardCount[2]+cardCount[3]+cardCount[4]+cardCount[5])*100/(double)shoe.size();
   }
 }

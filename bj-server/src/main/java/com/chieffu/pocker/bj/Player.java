@@ -29,10 +29,7 @@ public class Player {
     }
 
     public int getHandValue() {
-        int total = 0;
-        for (Card c : hand) {
-            total += c.getValue();
-        }
+        int total = getHandMinValue();
         if (hasAce() && total <= 11) {
             total += 10;
         }

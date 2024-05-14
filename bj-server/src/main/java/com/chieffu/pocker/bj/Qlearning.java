@@ -31,7 +31,7 @@ public class Qlearning {
 
         for (int i = 0; i < episodes; i++) {
             Blackjack game = new Blackjack();
-            game.removeRandomCards();
+//            game.removeRandomCards();
             game.start();
             stateQ = getStateQ(game);
             do {
@@ -101,16 +101,6 @@ public class Qlearning {
         return new double[] {wins / (double) (wins + losses), wins / (double) (wins+losses+evens),totalReword};
     }
 
-    // 辅助方法：从回放缓冲区随机抽取一批经验
-    private List<Experience> getRandomBatch(List<Experience> buffer, int batchSize) {
-        List<Experience> batch = new ArrayList<>(batchSize);
-        Random random = new Random();
-        while (batch.size() < batchSize && !buffer.isEmpty()) {
-            int index = random.nextInt(buffer.size());
-            batch.add(buffer.remove(index)); // 采样后移除以避免重复采样
-        }
-        return batch;
-    }
 
     private double takeAction(Action action, Blackjack game) {
        return game.takeAction(action);
@@ -182,22 +172,6 @@ public class Qlearning {
             throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
-        }
-    }
-    @Data
-    static class Experience {
-        private final double[] state;
-        private final Action action;
-        private final double reward;
-        private final double[] newState;
-        private final boolean isTerminal;
-
-        public Experience(double[] state, Action action, double reward, double[] newState, boolean isTerminal) {
-            this.state = state;
-            this.action = action;
-            this.reward = reward;
-            this.newState = newState;
-            this.isTerminal = isTerminal;
         }
     }
 }

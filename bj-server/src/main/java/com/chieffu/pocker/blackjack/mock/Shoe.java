@@ -99,6 +99,26 @@ public class Shoe extends Blackjack {
         double stand = q[0];
         return hit > stand;
     }
+    private Boolean shouldMyCountingHit(Player player, Dealer dealer) {
+        double[] state = new double[4];
+        int i = 0;
+        state[i++] = dealer.getFirstCard().getBlackjackDot();
+        int handValue = player.getHandValue();
+        state[i++] = handValue;
+        state[i++] = (player.getHandMinValue() != handValue) ? 1 : 0;
+        int percentage = (int) (myCardCounting());
+        state[i++] = percentage;
+        StringBuffer s = new StringBuffer();
+        for (i = 0; i < state.length; i++) {
+            if(i!=0)s.append(" ");
+            s.append((int)state[i]);
+        }
+        String name = s.toString();
+        double[] q = algorithm.getQMap().get(name);
+        double hit = q[0];
+        double stand = q[1];
+        return hit==stand?null:hit>stand;
+    }
 
     private boolean shouldOmegaHit(Player player, Dealer dealer) {
         int[] state = new int[4];
@@ -139,8 +159,8 @@ public class Shoe extends Blackjack {
     public boolean ShouldPlayerSplit(Player player,Dealer dealer){
         if(player.getCards().size()==2&&player.getCards().get(0).getNum()==player.getCards().get(1).getNum()){
             double splitWin0 = expXWin(Arrays.asList(player.getCards().get(0).getBlackjackDot()),Blackjack.dot(dealer.getFirstCard()));
-            if(splitWin0>1.02){
-                log.info("闲{} 庄 {}  对子拆分后胜率 {}", player.getCards(),dealer.getCards(),splitWin0);
+            if(splitWin0>1.0){
+               // log.info("闲{} 庄 {}  对子拆分后胜率 {}", player.getCards(),dealer.getCards(),splitWin0);
                return true;
             }
         }
@@ -158,7 +178,7 @@ public class Shoe extends Blackjack {
 
    public boolean shouldPlayerDouble(Player player,Dealer dealer){
        if(player.getCards().size()==2){
-           return getPlayerOneMoreCardWinRate(player,dealer)>0.51;
+           return getPlayerOneMoreCardWinRate(player,dealer)>0.50;
        }
        return false;
    }
