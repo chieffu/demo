@@ -20,9 +20,8 @@ public class Train {
     }
     private static void train() {
         Qlearning algorithm = new Qlearning();
-        algorithm.loadQ("qqq-1.0.0");
         for(int i=0;i<20;i++) {
-            int episodes = 15000000;
+            int episodes = 1500000;
             double eta = 0.01;
             double gamma = 0.01;
             double epsilonStart = 1.0;
@@ -30,7 +29,7 @@ public class Train {
             double epsilonDelta = 0.01;
             int epsilonEvery = (int) (episodes * epsilonDelta);
             algorithm.train(episodes, eta, gamma, epsilonStart, epsilonMin, epsilonDelta, epsilonEvery);
-            algorithm.saveQ("qqq-1."+i);
+            algorithm.saveQ("q-1."+i);
             double[] winningQ = algorithm.test(2000);
 
             System.out.println("----- Wins -----");

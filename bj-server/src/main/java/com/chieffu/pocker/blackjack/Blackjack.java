@@ -119,7 +119,7 @@ public class Blackjack extends Ma {
             stage.pai = card;
             stage.parent = this;
             stage.dot = stage.dot();
-            if (stage.largeDot() >= 21 ) return null;
+            if (stage.largeDot() > 21|| stage.getCards().size() > 7 ) return null;
             next.add(stage);
             if (stage.largeDot() < 21) {
                 stage.next = new LinkedList<>();
@@ -408,11 +408,34 @@ public class Blackjack extends Ma {
                 for (Stage s : stages1) {
                     double rateS = (s.zRate(pai)/root.zRate(pai));
                     Map<Integer, Double> xRates1 = s.oneMoreCardRateMap(pai);
-                    double oneMoreCardWinRate = Blackjack.xWinRate(zRates, xRates1);
+                    double oneMoreCardWinRate = xWinRate(zRates, xRates1);
                     result += rateS * Math.max(currentWinRate, oneMoreCardWinRate);
                 }
             }
             return result;
+        }
+
+        public static double xWinRate(Map<Integer, Double> zRates, Map<Integer, Double> xRates) {
+            double nextWinRate = 0;
+            double zBloom = zRates.entrySet().stream().filter(e -> e.getKey() > 21).map(Map.Entry::getValue).reduce(0.0, (a, b) -> a + b);
+            double xBloom =1- xRates.entrySet().stream().filter(e -> e.getKey() < 22).map(Map.Entry::getValue).reduce(0.0, (a, b) -> a + b);
+
+            for (int k = 17; k <= 21; k++) {
+                Double xRate = xRates.get(k);
+                if (xRate == null) {
+                    continue;
+                }
+                for (int j = 17; j <= k; j++) {
+                    double zRate = zRates.get(j);
+                    if (k == j) {
+                        nextWinRate += xRate * zRate / 2;//和了算赢了一半
+                    } else {
+                        nextWinRate += xRate * zRate;
+                    }
+                }
+
+            }
+            return (1 - xBloom) * zBloom + nextWinRate;
         }
         public static Map<Integer, Double> zRate(int[] pai, Integer currentDot) {
             String key = Arrays.toString(pai) + currentDot;
@@ -521,11 +544,15 @@ public class Blackjack extends Ma {
     }
 
     public static double getCurrentWinRate(int xCurrent, Map<Integer, Double> zRates) {
+//        if (xCurrent > 21) return 0;
+//        double zBloom = zRates.entrySet().stream().filter(e -> e.getKey() > 21).map(e -> e.getValue()).reduce((a, b) -> a + b).orElse(0.0);
+//        double xGtZ = zRates.entrySet().stream().filter(e -> e.getKey() < xCurrent&&e.getKey()!=0).map(e -> e.getValue()).reduce((a, b) -> a + b).orElse(0.0);
+//        double xEqZ =  Optional.ofNullable(zRates.get(xCurrent)).orElse(0.0).doubleValue() ; //持平的话回本
+//        return zBloom+xGtZ+xEqZ*0.5;
         if (xCurrent > 21) return 0;
         double zBloom = zRates.entrySet().stream().filter(e -> e.getKey() > 21).map(e -> e.getValue()).reduce((a, b) -> a + b).orElse(0.0);
-        double xGtZ = zRates.entrySet().stream().filter(e -> e.getKey() < xCurrent&&e.getKey()!=0).map(e -> e.getValue()).reduce((a, b) -> a + b).orElse(0.0);
-        double xEqZ =  Optional.ofNullable(zRates.get(xCurrent)).orElse(0.0).doubleValue() ; //持平的话回本
-        return zBloom+xGtZ+xEqZ*0.5;
+        return zBloom + zRates.entrySet().stream().filter(e -> e.getKey() < xCurrent).map(e -> e.getValue()).reduce((a, b) -> a + b).orElse(0.0)
+                + Optional.ofNullable(zRates.get(xCurrent)).orElse(0.0).doubleValue() * 0.5; //持平的话回本
     }
 
     public static double xWinRate(Map<Integer, Double> zRates, Map<Integer, Double> xRates) {
@@ -593,7 +620,6 @@ public class Blackjack extends Ma {
             if(dotI>21)continue;
             List<Stage> xStages = xMiddleStageMap.get(dotI);
             for (Stage xStage : xStages) {
-                if(xStage.isBj())continue;
                 if(xStage.isBj())continue;
                 double xCurrentRate = 1.0;
                 List<Integer> xcards = xStage.getCards();
@@ -976,7 +1002,13 @@ public class Blackjack extends Ma {
         return rate3 * bloom3Odds + rate4 * bloom4Odds + rate5 * bloom5Odds + rate6 * bloom6Odds + rate7 * bloom7Odds + (rate8 + rate9 + rate10) * bloom8Odds;
 
     }
-
+    /**
+     * 闲家赢的期望 BJ 1.5赔率 ，其他按 1 陪，和 0 陪。
+     * @return
+     */
+    public double xWinExpectation(){
+        return Stage.xWinRate(pai,new ArrayList<>(),0) * 2 + rBjWin() * 1.25;
+    }
     /**
      * 计算3张同花 21 点的概率
      *

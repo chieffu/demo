@@ -13,7 +13,7 @@ public class Game {
     public static void main(String[] args) throws NotFoundException {
         Game game = new Game();
         game.printLog=false;
-        game.mockRound(10000);
+        game.mockRound(1000);
 
     }
     public MockContext mockRound(int n) throws NotFoundException {
@@ -22,8 +22,6 @@ public class Game {
             MockContext c = mock(i);
             if(c.getCount()>0){
                 c0.merge(c);
-            }
-            if(i%100==0) {
                 log.info("{} - total---次数 = {} -----max={} ----- min={}----结果 = {}  win:{}  lose:{} even:{}   win/all:{}  win/win+lose:{}",i, String.format("%.3f",c0.getCount()), String.format("%.3f",c0.getMaxWin()), String.format("%.3f",c0.getMinWin()), String.format("%.3f",c0.getResult()),c0.getWin(),c0.getLose(),c0.getEven(),String.format("%.3f",c0.getWin()/(c0.getEven()+c0.getWin()+c0.getLose())),String.format("%.3f",c0.getWin()/(c0.getWin()+c0.getLose())));
             }
         }
@@ -40,18 +38,20 @@ public class Game {
             round++;
             player.reset();
             dealer.reset();
-            player.hit(shoe.drawCard());
-            player.hit(shoe.drawCard());
-            dealer.hit(shoe.drawCard());
+
             double highLowCardCounting = shoe.highLowCardCounting();
             double omegaIICardCounting = shoe.omegaIICardCounting();
             double mycount = shoe.myCardCounting();
-            if(highLowCardCounting<-2.75){
+            double x = shoe.xWinExpectation();
+            if(x>1){
                 double result = shoe.play(player,dealer);
                 commonContext.addCount();
                 commonContext.addResult(result);
                 if(printLog) log.info("{}靴{}把压{} 高低：{} omega:{}  2_6:{}  结果 {}  当前 max:{}  min:{}  result:{}  闲：{} - 庄：{} ", shift, round, commonContext.getName(), String.format("%.3f",highLowCardCounting),String.format("%.3f",omegaIICardCounting),String.format("%.3f",mycount), result,commonContext.getMaxWin(),commonContext.getMinWin(),commonContext.getResult(), player,dealer);
             }else{
+                player.hit(shoe.drawCard());
+                player.hit(shoe.drawCard());
+                dealer.hit(shoe.drawCard());
                 dealer.hit(shoe.drawCard());
             }
         }

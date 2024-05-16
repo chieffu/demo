@@ -158,14 +158,14 @@ public class Blackjack {
     }
 
     public double[] getState() {
-        double[] state = new double[4];
+        double[] state = new double[3];
         int i = 0;
         state[i++] = dealer.getFirstCardValue();
         int handValue = player.getHandValue();
         state[i++] = handValue;
         state[i++] = (player.getHandMinValue() != handValue) ? 1 : 0;
-        int ome = (int) (shoe.myCardCounting());
-        state[i++] = ome;
+//        int ome = (int) (shoe.myCardCounting());
+//        state[i++] = ome;
         return state;
     }
 

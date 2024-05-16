@@ -24,15 +24,15 @@ public class Shoe extends Blackjack {
     public Shoe(int n) {
         super(n);
         cards = Pocker.randomPocker(n);
-        cut = (int)(Math.random()*(180-60))+60;
+        cut = (int)(Math.random()*(180-130))+130;
     }
 
     private static Qlearning initQlearning() {
         Qlearning algorithm = new Qlearning();
-        algorithm.loadQ("qq-2.0.0");
+        algorithm.loadQ("q-1.0.0.0");
 //        algorithm.loadQ("q-3.0.0");
 //        algorithm.loadQ("q-4.0.0");
-//        algorithm.printQ();
+        algorithm.printQ();
         double[] winningQ = algorithm.test(100000);
 
         System.out.println("----- Wins -----");
@@ -67,14 +67,7 @@ public class Shoe extends Blackjack {
 
     public boolean shouldPlayerHit(Player player,Dealer dealer){
         if(player.getHandValue()>=21)return false;
-        double highLow = this.highLowCardCounting();
-//        if(highLow<-3) {
-            boolean highLowHit = shouldHighLowHit(player, dealer);
-            if(highLowHit)return true;
-//        }else {
-//            boolean result = shouldOmegaHit(player, dealer);
-//            if (result) return true;
-//        }
+
         Blackjack.Stage xStage = Blackjack.Stage.getXStage(player.getCardNums());
         if(xStage==null){
             return false;
@@ -84,7 +77,7 @@ public class Shoe extends Blackjack {
         double oneMoreCardWinRate = xStage.getOneMoreCardWinRate(zStage,getPai());
         if(Game.printLog)log.info("闲{} 庄 {}  当前胜率为{}，加一张胜率为{}  ", player.getCards(),dealer.getCards(),String.format("%.4f",currentWinRate), String.format("%.4f",oneMoreCardWinRate));
         boolean shouldHit = oneMoreCardWinRate>currentWinRate;
-        return shouldHit;
+        return shouldHit|| shouldHighLowHit(player,dealer);
     }
 
     private boolean shouldHighLowHit(Player player, Dealer dealer) {
@@ -119,13 +112,33 @@ public class Shoe extends Blackjack {
         double stand = q[1];
         return hit==stand?null:hit>stand;
     }
+    private Boolean shouldStrategyHit(Player player, Dealer dealer) {
+        double[] state = new double[3];
+        int i = 0;
+        state[i++] = dealer.getFirstCard().getBlackjackDot();
+        int handValue = player.getHandValue();
+        state[i++] = handValue;
+        state[i++] = (player.getHandMinValue() != handValue) ? 1 : 0;
+
+        StringBuffer s = new StringBuffer();
+        for (i = 0; i < state.length; i++) {
+            if(i!=0)s.append(" ");
+            s.append((int)state[i]);
+        }
+        String name = s.toString();
+        double[] q = algorithm.getQMap().get(name);
+        double hit = q[0];
+        double stand = q[1];
+        return hit>stand;
+    }
 
     private boolean shouldOmegaHit(Player player, Dealer dealer) {
         int[] state = new int[4];
-        int i=0;
-        state[i++]= dealer.getFirstCard().getBlackjackDot();
-        state[i++]= player.getHandValue();
-        state[i++]= player.hasAce()?1:0;
+        int i = 0;
+        state[i++] = dealer.getFirstCard().getBlackjackDot();
+        int handValue = player.getHandValue();
+        state[i++] = handValue;
+        state[i++] = (player.getHandMinValue() != handValue) ? 1 : 0;
 
 //      int h_l =  (int)(shoe.highLowCardCounting());
 //      if(h_l>7)h_l=7;
@@ -185,6 +198,9 @@ public class Shoe extends Blackjack {
 
 
    public double play(Player player,Dealer dealer) throws NotFoundException {
+       player.hit(drawCard());
+       player.hit(drawCard());
+       dealer.hit(drawCard());
         /*if(shouldPlayerSurrender(player,dealer)){
             return -0.5;
         }else */
@@ -226,7 +242,7 @@ public class Shoe extends Blackjack {
         if(playerHandValue >21) return -1;
         int dealerHandValue = dealer.getHandValue();
         if(dealerHandValue >21) return 1;
-        if(dealerHandValue==21&&dealer.getCards().size()==2)return -1;
+        if(dealer.isBlackjack())return -1;
         if(playerHandValue > dealerHandValue) return 1;
         if(playerHandValue < dealerHandValue) return -1;
         return 0;
