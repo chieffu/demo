@@ -193,6 +193,15 @@ public class Qlearning {
 
         return state;
     }
+    public boolean shouldHit(int zCard,int xMinHand,boolean hasAce) {
+        int state = zCard;
+        state += (xMinHand << 5);
+        if (hasAce) {
+            state += 16;
+        }
+
+        return q[state][1]>q[state][0];
+    }
 
 
     /**

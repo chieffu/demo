@@ -1,5 +1,6 @@
 package com.chieffu.pocker.util;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,6 +21,8 @@ public abstract class StringUtils {
     private static final char EXTENSION_SEPARATOR = '.';
 
     private static final String _BR = "<br/>";
+
+    private static SecureRandom random = new SecureRandom();
 
     private static final List<String> COMMON_WORDS = new ArrayList<>();
 
@@ -905,7 +908,7 @@ public abstract class StringUtils {
 
 
     public static int newRandomInt(int min, int max) {
-        int result = min + (new Double(Math.random() * (max - min))).intValue();
+        int result = min + random.nextInt(max - min);
 
         return result;
     }

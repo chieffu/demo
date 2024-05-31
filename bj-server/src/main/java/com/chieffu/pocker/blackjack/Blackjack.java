@@ -1007,7 +1007,30 @@ public class Blackjack extends Ma {
      * @return
      */
     public double xWinExpectation(){
-        return Stage.xWinRate(pai,new ArrayList<>(),0) * 2 + rBjWin() * 1.25;
+        return Stage.xWinRate(pai,new ArrayList<>(),0) * 2 + rBjWin() * 1.25 + rBjHe();
+    }
+
+    public double rDoubleRate(){
+        double r = 0.0;
+        for(int k=1;k<=10;k++) {
+            Map<Integer, Double> zRates = zRate(pai, k);
+
+            Blackjack.Stage zStage = Blackjack.Stage.getZStage(Collections.singletonList(k));
+            for (int i = 1; i <= 10; i++) {
+                for (int j = 1; j <= 10; j++) {
+                    Blackjack.Stage xStage = Blackjack.Stage.getXStage(Arrays.asList(i, j));
+                    if (!(i == 1 && j == 10 || i == 10 && j == 1)) {
+                        double currentRate = xStage.getXCurrentWinRate(zStage,pai);
+                        Map<Integer, Double> xRates1 = xStage.oneMoreCardRateMap(pai);
+                        double oneMoreCardWinRate = xWinRate(zRates, xRates1);
+                        if(currentRate<oneMoreCardWinRate && oneMoreCardWinRate>0.5){
+                            r+= p(Arrays.asList(i,j,k));
+                        }
+                    }
+                }
+            }
+        }
+        return r/p(countPai(),3);
     }
     /**
      * 计算3张同花 21 点的概率
@@ -1064,21 +1087,37 @@ public class Blackjack extends Ma {
     public double p3(int dot) {
         List<List<Integer>> bag21 = bags.get(dot - 1).stream().filter(l -> l.size() == 3).collect(Collectors.toList());
         long rate21 = 0;
-
         for (List<Integer> bag : bag21) {
-            Map<Integer, Integer> groups = groups(bag);
-            long r = 1;
-            for (Integer k : groups.keySet()) {
-                int countK = countPai(k);
-                if (k == 11 && groups.containsKey(1) && r != 0)
-                    r = r / c(countK, groups.get(1)) * c(countK, groups.get(k) + groups.get(1));
-                else
-                    r *= c(countK, groups.get(k));
-            }
+            long r = c(bag);
             rate21 += r;
         }
 
         return rate21 * 1.0 / c(countPai(), 3);
+    }
+
+    private long c(List<Integer> cards) {
+        Map<Integer, Integer> groups = groups(cards);
+        long r = 1;
+        for (Integer k : groups.keySet()) {
+            int countK = countPai(k);
+            if (k == 11 && groups.containsKey(1) && r != 0)
+                r = r / c(countK, groups.get(1)) * c(countK, groups.get(k) + groups.get(1));
+            else
+                r *= c(countK, groups.get(k));
+        }
+        return r;
+    }
+    private long p(List<Integer> cards) {
+        Map<Integer, Integer> groups = groups(cards);
+        long r = 1;
+        for (Integer k : groups.keySet()) {
+            int countK = countPai(k);
+            if (k == 11 && groups.containsKey(1) && r != 0)
+                r = r / p(countK, groups.get(1)) * p(countK, groups.get(k) + groups.get(1));
+            else
+                r *= p(countK, groups.get(k));
+        }
+        return r;
     }
 
     /**

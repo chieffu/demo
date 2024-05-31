@@ -8,9 +8,7 @@ import com.chieffu.pocker.util.StringUtils;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Data
@@ -33,10 +31,9 @@ public class Shoe extends Blackjack {
 //        algorithm.loadQ("q-3.0.0");
 //        algorithm.loadQ("q-4.0.0");
         algorithm.printQ();
-        double[] winningQ = algorithm.test(100000);
-
-        System.out.println("----- Wins -----");
-        System.out.printf("%5.2f%%    %5.2f%% (win-loss)%n", winningQ[0]*100, winningQ[0]*100);
+//        double[] winningQ = algorithm.test(100000);
+//        System.out.println("----- Wins -----");
+//        System.out.printf("%5.2f%%    %5.2f%% (win-loss)%n", winningQ[0]*100, winningQ[0]*100);
         return algorithm;
     }
 
@@ -44,7 +41,12 @@ public class Shoe extends Blackjack {
     private static com.chieffu.pocker.project.Qlearning initQlearning2() {
         com.chieffu.pocker.project.Qlearning algorithm = new com.chieffu.pocker.project.Qlearning();
         algorithm.loadQ("q-1.0.0");
+        adjustQ(algorithm);
+//        algorithm.loadQ("q.q");
         algorithm.prettyPrintQ(false);
+//        double[] winningQ = algorithm.test(100000);
+//        System.out.printf("%5.2f%%    %5.2f%% (win-loss)%n", winningQ[0]*100, winningQ[1]*100);
+
         return algorithm;
     }
 
@@ -76,14 +78,14 @@ public class Shoe extends Blackjack {
         double currentWinRate = xStage.getXCurrentWinRate(zStage,getPai());
         double oneMoreCardWinRate = xStage.getOneMoreCardWinRate(zStage,getPai());
         if(Game.printLog)log.info("闲{} 庄 {}  当前胜率为{}，加一张胜率为{}  ", player.getCards(),dealer.getCards(),String.format("%.4f",currentWinRate), String.format("%.4f",oneMoreCardWinRate));
-        boolean shouldHit = oneMoreCardWinRate>currentWinRate;
-        return shouldHit|| shouldHighLowHit(player,dealer);
+        boolean shouldHit = oneMoreCardWinRate > currentWinRate;
+        return shouldHit || shouldHighLowHit(player,dealer);
     }
 
     private boolean shouldHighLowHit(Player player, Dealer dealer) {
-
         int state = dealer.getFirstCard().getBlackjackDot();
-        state += (player.getHandMinValue() << 5);
+        int p = player.getHandValue();
+        state += (p << 5);
         if (player.hasAce()) {
             state += 16;
         }
@@ -162,6 +164,81 @@ public class Shoe extends Blackjack {
         return result;
     }
 
+    public boolean shouldBet(){
+        int[] pai = getPai();
+        int winCount=0;
+        int lossCount=0;
+        int even=0;
+        List<Integer> player = new ArrayList<>();
+        List<Integer> dealer = new ArrayList<>();
+        boolean playerHasAce;
+        int[] xDots;
+        int[] zDots;
+        int cnt = 40000;
+        while(cnt-->0){
+           player.add(randomCard(pai));
+           player.add(randomCard(pai));
+           dealer.add(randomCard(pai));
+           xDots = Blackjack.dots(player);
+           playerHasAce = xDots.length==2;
+           while(xDots[xDots.length-1]<12){
+               player.add(randomCard(pai));
+               xDots = Blackjack.dots(player);
+               playerHasAce = xDots.length==2;
+           }
+           while(xDots[xDots.length-1]<21 && projectAlgorithm.shouldHit(dealer.get(0),xDots[xDots.length-1],playerHasAce)){
+               player.add(randomCard(pai));
+               xDots = Blackjack.dots(player);
+               playerHasAce = xDots.length==2;
+           }
+           dealer.add(randomCard(pai));
+            zDots = Blackjack.dots(dealer);
+            while(zDots[zDots.length-1]<17){
+                dealer.add(randomCard(pai));
+                zDots = Blackjack.dots(dealer);
+            }
+            if(xDots[xDots.length-1]>21){
+                lossCount++;
+            }else if(Blackjack.isBlackjack(player)){
+                if(Blackjack.isBlackjack(dealer)){
+                    even++;
+                }else{
+                    winCount++;
+                }
+            }else if(Blackjack.isBlackjack(dealer)){
+                lossCount++;
+            }else if(zDots[zDots.length-1]>21){
+                winCount++;
+            }else if(xDots[xDots.length-1]>zDots[zDots.length-1]){
+                winCount++;
+            }else if(xDots[xDots.length-1]<zDots[zDots.length-1]){
+                lossCount++;
+            }else{
+                even++;
+            }
+            for(int i=player.size()-1;i>=0;i--){
+               pai[player.remove(i)]++;
+            }
+            for(int i=dealer.size()-1;i>=0;i--){
+                pai[dealer.remove(i)]++;
+            }
+        }
+        double rate =  winCount/(double)(winCount+lossCount);
+        return rate > 0.475;
+    }
+    public Integer randomCard( int[] pai){
+        int countPai = countPai(pai);
+        int random = StringUtils.newRandomInt(0, countPai);
+        for(int i=1;i<pai.length;i++){
+            if(random>=pai[i]){
+                random-=pai[i];
+            }else{
+                pai[i]--;
+                return i;
+            }
+        }
+        return null;
+    }
     public double getPlayerOneMoreCardWinRate(Player player,Dealer dealer){
         Blackjack.Stage xStage = Blackjack.Stage.getXStage(player.getCardNums());
         if(xStage==null)return 0;
@@ -172,7 +249,7 @@ public class Shoe extends Blackjack {
     public boolean ShouldPlayerSplit(Player player,Dealer dealer){
         if(player.getCards().size()==2&&player.getCards().get(0).getNum()==player.getCards().get(1).getNum()){
             double splitWin0 = expXWin(Arrays.asList(player.getCards().get(0).getBlackjackDot()),Blackjack.dot(dealer.getFirstCard()));
-            if(splitWin0>1.0){
+            if(splitWin0>=1.0){
                // log.info("闲{} 庄 {}  对子拆分后胜率 {}", player.getCards(),dealer.getCards(),splitWin0);
                return true;
             }
@@ -191,7 +268,17 @@ public class Shoe extends Blackjack {
 
    public boolean shouldPlayerDouble(Player player,Dealer dealer){
        if(player.getCards().size()==2){
-           return getPlayerOneMoreCardWinRate(player,dealer)>0.50;
+           return getPlayerOneMoreCardWinRate(player,dealer)>=0.5;
+//           Blackjack.Stage xStage = Blackjack.Stage.getXStage(player.getCardNums());
+//           int zcard = Blackjack.dot(dealer.getFirstCard());
+//           Blackjack.Stage zStage = Blackjack.Stage.getZStage(Collections.singletonList(zcard));
+//           Map<Integer, Double> zRates = zRate(getPai(), zcard);
+//           double currentRate = xStage.getXCurrentWinRate(zStage,getPai());
+//           Map<Integer, Double> xRates1 = xStage.oneMoreCardRateMap(getPai());
+//           double oneMoreCardWinRate = xWinRate( zRates, xRates1);
+//           if(currentRate<oneMoreCardWinRate && oneMoreCardWinRate>0.5){
+//               return true;
+//           }
        }
        return false;
    }
@@ -214,9 +301,10 @@ public class Shoe extends Blackjack {
                 while(p.shouldHit()){
                     p.hit(drawCard());
                 }
-                while(shouldPlayerHit(p,dealer)){
+                if(shouldPlayerHit(p,dealer)){
                     p.hit(drawCard());
                 }
+
             }
             dealerRound(dealer);
             return players.stream().map(p->calculateResult(p,dealer)).reduce((a,b)->a+b).orElse(0.0);
@@ -256,5 +344,137 @@ public class Shoe extends Blackjack {
 
     public boolean isOver() {
         return this.cards.size()<=cut;
+    }
+
+    public static void main(String[] args)throws Exception {
+        long start = System.currentTimeMillis();
+        adjustQ1(projectAlgorithm);
+        projectAlgorithm.prettyPrintQ(false);
+//        projectAlgorithm.saveQ("q.q");
+    }
+
+    private static void adjustQ(com.chieffu.pocker.project.Qlearning projectAlgorithm) {
+        int state = 8;
+        state += (16 << 5);
+        state += 16;
+
+        double[] q = projectAlgorithm.getQ()[state];
+        double t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+
+        state = 8;
+        state += (15 << 5);
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 8;
+        state += (15 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 7;
+        state += (15 << 5);
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+
+        state = 8;
+        state += (14 << 5);
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 9;
+        state += (14 << 5);
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 2;
+        state += (13 << 5);
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 5;
+        state += (12 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+
+        state = 10;
+        state += (8 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 9;
+        state += (8 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 2;
+        state += (8 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 1;
+        state += (8 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+
+        state = 10;
+        state += (9 << 5);
+        state += 16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+    }
+    private static void adjustQ1(com.chieffu.pocker.project.Qlearning projectAlgorithm) {
+        int state;
+        double[] q;
+        double t ;
+
+        state = 10;
+        state += (16 << 5);
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
+        state = 10;
+        state += (16 << 5);
+        state +=16;
+        q = projectAlgorithm.getQ()[state];
+        t = q[0];
+        q[0]=q[1];
+        q[1]=t;
+
     }
 }

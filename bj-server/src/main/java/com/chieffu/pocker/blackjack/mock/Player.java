@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 public class Player {
     protected List<Pocker> cards = new ArrayList<>();
     List<Player> splits;
+
+    double bet;
     public List<Player> split(){
         Player p0 = new Player();
         p0.hit(cards.get(0));
@@ -23,6 +25,9 @@ public class Player {
         return splits;
     }
 
+    public void bet(double bet){
+        this.bet = bet;
+    }
     public boolean shouldHit(){
         return getHandValue()<12;
     }
@@ -53,6 +58,7 @@ public class Player {
     public void reset(){
         cards.clear();
         splits=null;
+        bet=0;
     }
 
     public String toString(){

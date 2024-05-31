@@ -85,9 +85,6 @@ public class Pocker implements Serializable {
             list.addAll(list0);
         Collections.shuffle(list, rd);
         Collections.shuffle(list, rd);
-        Collections.shuffle(list, rd);
-        Collections.shuffle(list, rd);
-        Collections.shuffle(list, rd);
         return new LinkedList<>(list);
     }
 }
