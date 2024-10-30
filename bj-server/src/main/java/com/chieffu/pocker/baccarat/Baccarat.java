@@ -194,7 +194,7 @@ public class Baccarat extends Ma {
         for (int i1 = 0; i1 <= 9; i1++) {
             int k1 = this.pai[i1];
             if (k1 > 0) {
-                this.pai[i1] = k1 - 1;
+                this.pai[i1]--;
                 for (int i2 = 0; i2 <= 9; i2++) {
                     int q2 = i1 + i2;
                     if (q2 >= 10)
@@ -202,21 +202,21 @@ public class Baccarat extends Ma {
                     if (q2 <= 5) {
                         int k2 = this.pai[i2];
                         if (k2 > 0) {
-                            this.pai[i2] = k2 - 1;
+                            this.pai[i2] --;
                             int i3 = x - q2;
                             if (i3 < 0)
                                 i3 += 10;
                             int k3 = this.pai[i3];
                             if (k3 > 0) {
-                                this.pai[i3] = k3 - 1;
+                                this.pai[i3] --;
                                 for (int j1 = 0; j1 <= 9; j1++) {
                                     int d1 = this.pai[j1];
                                     if (d1 > 0) {
-                                        this.pai[j1] = d1 - 1;
+                                        this.pai[j1] --;
                                         for (int j2 = 0; j2 <= 9; j2++) {
                                             int d2 = this.pai[j2];
                                             if (d2 > 0) {
-                                                this.pai[j2] = d2 - 1;
+                                                this.pai[j2] --;
                                                 int q22 = j1 + j2;
                                                 if (q22 >= 10)
                                                     q22 -= 10;
@@ -302,6 +302,137 @@ public class Baccarat extends Ma {
         return sum;
     }
 
+    /**
+     * 庄家补牌以6点胜出的概率
+     * @return
+     */
+    public double rZBig6(){
+        long sum = 0L;
+        for (int i1 = 0; i1 <= 9; i1++) {
+            int k1 = this.pai[i1];
+            if (k1 > 0) {
+                this.pai[i1]--;
+                for (int i2 = 0; i2 <= 9; i2++) {
+                    int q2 = i1 + i2;
+                    if (q2 >= 10)
+                        q2 -= 10;
+                    if (q2 <= 5) {
+                        int k2 = this.pai[i2];
+                        if (k2 > 0) {
+                            this.pai[i2] --;
+                            for(int i3=0;i3<=9;i3++){
+                                int x = q2+i3;
+                                if(x>=10)x=x-10;
+                                if(x<=5){
+                                    int k3 = this.pai[i3];
+                                    if (k3 > 0) {
+                                        this.pai[i3] --;
+                                        for (int j1 = 0; j1 <= 9; j1++) {
+                                            int d1 = this.pai[j1];
+                                            if (d1 > 0) {
+                                                this.pai[j1] --;
+                                                for (int j2 = 0; j2 <= 9; j2++) {
+                                                    int d2 = this.pai[j2];
+                                                    if (d2 > 0) {
+                                                        this.pai[j2] --;
+                                                        int q22 = j1 + j2;
+                                                        if (q22 >= 10)
+                                                            q22 -= 10;
+                                                        long pre5 = multiply(k1, k2, k3, d1, d2);
+                                                        if (q22 <= 2) {
+                                                            sum = getSum(6, sum, q22, pre5);
+                                                        } else if (q22 == 3) {
+                                                            if (i3 != 8) {
+                                                                sum = getSum(6, sum, q22, pre5);
+                                                            }
+                                                        } else if (q22 == 4) {
+                                                            if (i3 != 0 && i3 != 1 && i3 != 8 && i3 != 9) {
+                                                                sum = getSum(6, sum, q22, pre5);
+                                                            }
+                                                        } else if (q22 == 5) {
+                                                            if (i3 != 0 && i3 != 1 && i3 != 2 && i3 != 3 && i3 != 8 && i3 != 9) {
+                                                                sum = getSum(6, sum, q22, pre5);
+                                                            }
+                                                        } else if (q22 == 6) {
+                                                            if (i3 == 6 || i3 == 7) {
+                                                                sum = getSum(6, sum, q22, pre5);
+                                                            }
+                                                        }
+                                                    }
+                                                    this.pai[j2] = d2;
+                                                }
+                                                this.pai[j1] = d1;
+                                            }
+                                        }
+                                        this.pai[i3] = k3;
+                                    }
+                                }
+                            }
+                            this.pai[i2] = k2;
+                        }
+                    }
+                }
+                this.pai[i1] = k1;
+            }
+        }
+        return sum/(double)p(countPai(),6);
+    }
+
+    /**
+     * 庄家不补牌以6点胜出的概率
+     * @return
+     */
+    public double rZSmall6(){
+        long sum = 0L;
+        for (int i1 = 0; i1 <= 9; i1++) {
+            int k1 = this.pai[i1];
+            if (k1 > 0) {
+                this.pai[i1]--;
+                for (int i2 = 0; i2 <= 9; i2++) {
+                    int q2 = i1 + i2;
+                    if (q2 >= 10)
+                        q2 -= 10;
+                    if (q2 <= 5) {
+                        int k2 = this.pai[i2];
+                        if (k2 > 0) {
+                            this.pai[i2] --;
+                            for(int i3=0;i3<=9;i3++){
+                                int x = q2+i3;
+                                if(x>=10)x=x-10;
+                                if(x<=5) {
+                                    int k3 = this.pai[i3];
+                                    if (k3 > 0) {
+                                        this.pai[i3]--;
+                                        for (int j1 = 0; j1 <= 9; j1++) {
+                                            int d1 = this.pai[j1];
+                                            if (d1 > 0) {
+                                                this.pai[j1]--;
+                                                int j2=6-j1;
+                                                if(j2<0)j2+=10;
+                                                int d2 = this.pai[j2];
+                                                if (d2 > 0) {
+                                                    this.pai[j2]--;
+                                                    if ( i3 != 6 && i3 != 7) {
+                                                        sum += multiply(k1, k2, k3, d1, d2) * countPai();
+                                                    }
+                                                }
+                                                this.pai[j2] = d2;
+                                            }
+                                            this.pai[j1] = d1;
+                                        }
+                                        this.pai[i3] = k3;
+                                    }
+                                }
+                            }
+                            this.pai[i2] = k2;
+                        }
+                    }
+                }
+                this.pai[i1] = k1;
+            }
+        }
+        return sum/(double)p(countPai(),6);
+    }
     private long getSum(int z, long sum, int q22, long pre5) {
         int j3 = z - q22;
         if (j3 < 0)
@@ -834,13 +965,24 @@ public class Baccarat extends Ma {
         logger.info("庄例牌{} {}", pock.rZLp(), pock.rZLp() * 5.0D);
         logger.info("闲龙宝 {}", pock.xLongBao());
         logger.info("庄龙宝 {}", pock.zLongBao());
-        MockContext c0 = new MockContext("total");
-        for (int i = 1; i <= 10000; i++) {
-            MockContext c = mockLongHu(i,1.00);
-            log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
-            c0.merge(c);
-            log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
+
+        double l = 0;
+        for(int i=0;i<6;i++){
+            l+=pock.countXZ33(i,6);
         }
+        logger.info("大老虎 {}",pock.rZBig6()*51);
+        logger.info("小老虎 {}",pock.rZSmall6()*23);
+
+        logger.info("超级6 {}  {}",l*1.0/p(pock.countPai(),6),pock.rZBig6()+ pock.rZSmall6());
+
+        MockContext c0 = new MockContext("total");
+//        for (int i = 1; i <= 10000; i++) {
+//            MockContext c = mockLongHu(i,1.00);
+//            log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
+//            c0.merge(c);
+//            log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
+//        }
+
     }
 }
 

@@ -14,6 +14,8 @@ public class BjRound {
     private Integer shoeNum;
     private String roundId;
 
+    private Integer status; // 0:开始， 100:开始下注，101:结束， 103:等待发牌， 113:等待决策 hit、miss、split、double，109:等待洗牌
+
     private List<List<Pocker>> players = new ArrayList<>();
 
     private List<Pocker> banker = new ArrayList<>();

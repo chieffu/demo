@@ -19,6 +19,7 @@ BjShoe {
     }
 
     public void addRound(BjRound round) {
+        if(round.equals(roundMap.get(round.getRoundId())))return;
         roundMap.put(round.getRoundId(), round);
     }
 

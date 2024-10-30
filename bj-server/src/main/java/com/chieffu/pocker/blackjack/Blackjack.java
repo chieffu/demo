@@ -612,7 +612,7 @@ public class Blackjack extends Ma {
         return rates;
     }
 
-    public double expXWin() {
+    public double expXWin0() {
         int[] pai = this.pai;
         Map<Integer, List<Stage>> xMiddleStageMap = Stage.X_MIDDLE_STAGE_MAP;
         double xNotBjWin = 0.0;
@@ -797,6 +797,20 @@ public class Blackjack extends Ma {
     }
 
     /**
+     * 计算同色同花的大于10的对子的概率
+     *
+     * @return 纯对子的概率
+     */
+    public double rPurePair20() {
+        long purePair = 0;
+        for (int i = 9; i < 13; i++) {
+            for (int j = 0; j < 4; j++) {
+                purePair += c(pk[j][i], 2);
+            }
+        }
+        return purePair * 1.0 / c(countPai(), 2);
+    }
+    /**
      * 计算同色同花的对子的概率
      *
      * @return 纯对子的概率
@@ -974,11 +988,11 @@ public class Blackjack extends Ma {
         int countPai = countPai();
         double luckyQueenWithBj = 1.0 * c(countPai(1), 1) * c(countPai(10) - 2, 1) / 2 * purePairQueue / c(countPai, 4);
         double luckyQueen = 1.0 * purePairQueue / c(countPai, 2);
-        double purePair = rPurePair();
+        double purePair20 = rPurePair20();
         double pureP2_20 = rFlush20Of2Rate();
         double p2_20 = p2(20);
 
-        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair - luckyQueen) + (OddsPure20 + 1) * (pureP2_20 - luckyQueen) + (odds20 + 1) * (p2_20 - pureP2_20 - luckyQueen);
+        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair20 - luckyQueen) + (OddsPure20 + 1) * (pureP2_20 - luckyQueen) + (odds20 + 1) * (p2_20 - pureP2_20 - luckyQueen);
     }
 
     /**
@@ -1152,7 +1166,7 @@ public class Blackjack extends Ma {
      *
      * @return
      */
-    public double expXWin0() {
+    public double expXWin() {
         return xWinRateWithoutBJ(pai, new ArrayList<>(), 0) * 2 + rBjWin() * 2.5 +rBjHe();
 //         Map<Integer,Double> zRates = Stage.zRate(pai,0);
 //         return Stage.xWinRate(zRates,xRates) * 2 + rBjWin() * 1.25 ;
@@ -1311,7 +1325,7 @@ public class Blackjack extends Ma {
         log.info("count of all XStage:{} ",Stage.getX_ROOT(new ArrayList<>()).getStageCount());
         log.info("count of all zStage:{} ", zStage.getStageCount());
         log.info("spend time:{}", System.currentTimeMillis() - start);
-//        test0();
+        test0();
 //        test1();
 
     }

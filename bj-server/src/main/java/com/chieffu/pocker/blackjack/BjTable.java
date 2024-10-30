@@ -76,7 +76,9 @@ public class BjTable {
             currentShoe=null;
         }
         currentRoundNum.set(roundNum);
-        getCurrentShoe().addRound( getBjRound(roundId));
+        BjRound round = getBjRound(roundId);
+        round.setStatus(status);
+        getCurrentShoe().addRound(round);
 
     }
 }

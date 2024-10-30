@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class MockBlackjack {
 
     private static boolean printLog=false;
-    private static int times = 20;
+    private static int times = 1;
     private static double commonQ = 1.05;
     private static double luckyQueueQ = 1.1;
     private static double pairQ = 1.1;
@@ -29,16 +29,12 @@ public class MockBlackjack {
         double expectation = blackjack.highLowCardCounting();
 //        double zBloom = 1-blackjack.rZNotBloom(0);
 //        double r9_10 = blackjack.countPai()/(double)(blackjack.countPai(9)+blackjack.countPai(10));
-//        double luckyQueue = blackjack.expLuckyQueen(1000, 125, 19, 9, 4);
-//        double hotThree = blackjack.expHotThree(100, 20, 4, 2, 1);
-//        double luckyThree = blackjack.expLuckThree(100, 40, 30, 10, 5);
-//        double pair = blackjack.expPair(25, 8);
-//        if (xWin > commonQ+1||luckyQueue>luckyQueueQ|hotThree>hotThreeQ||luckyThree>luckyThreeQ||pair>pairQ) {
+        double luckyQueue = blackjack.expLuckyQueen(1000, 125, 19, 9, 4);
+        double hotThree = blackjack.expHotThree(100, 20, 4, 2, 1);
+        double luckyThree = blackjack.expLuckThree(100, 40, 30, 10, 5);
+        double pair = blackjack.expPair(25, 8);
+        if (luckyQueue>luckyQueueQ|hotThree>hotThreeQ||luckyThree>luckyThreeQ||pair>pairQ) {
            //log.info("shift {}  round {} pai:{}  rate:{}",shift,round, Arrays.toString(blackjack.getPai()), xWin);
-        double times = expectation>3?1:0.01;
-        if(expectation>3.5){
-           double rate =  blackjack.expXWin0();
-            if(rate>1.0) times = 3;
             List<Integer> xCards = px.stream().map(p->Blackjack.dot(p)).collect(Collectors.toList());
             int[] dot = Blackjack.dots(xCards);
             blackjack.removePocker(px);
@@ -158,7 +154,7 @@ public class MockBlackjack {
             }
             hotThreeContext.addCount();
             hotThreeContext.addResult(r);
-            if(printLog)log.info("{}靴{}把压{} 期望：{}  结果：{}", shift, round, hotThreeContext.getName(), String.format("%.3f",hotThree),r);
+            if(printLog)log.info("{}靴{}把压{} 期望：{}  结果：{} 庄：{} - 闲：{}", shift, round, hotThreeContext.getName(), String.format("%.3f",hotThree),r,pz,px);
         }
     }
 
@@ -185,7 +181,7 @@ public class MockBlackjack {
             }
             luckyThreeContext.addCount();
             luckyThreeContext.addResult(r);
-            if(printLog)log.info("{}靴{}把压{} 期望：{}  结果：{}", shift, round, luckyThreeContext.getName(), String.format("%.3f",luckyThree), r);
+            if(printLog)log.info("{}靴{}把压{} 期望：{}  结果：{} 庄：{} - 闲：{}", shift, round, luckyThreeContext.getName(), String.format("%.3f",luckyThree), r,pz,px);
         }
     }
 
@@ -287,12 +283,12 @@ public class MockBlackjack {
             pz.add(pks.remove(pks.size() - 1));
             pz.add(pks.remove(pks.size() - 1));
 
-//            mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
-//            mockPair(shift, round, blackjack, px, px, pairContext);
-//            mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
-//            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
+            mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
+            mockPair(shift, round, blackjack, px, px, pairContext);
+            mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
+            mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
 
-            mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
+//            mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
 //            mockBloom(shift, round, blackjack, pz, px, bloomContext);
 
             blackjack.removePocker(px);
@@ -326,7 +322,7 @@ public class MockBlackjack {
             times = Integer.parseInt(ConfigUtil.getSetting("mock.times", "20"));
             printLog = true;
             MockContext c0 = new MockContext("total");
-            for (int i = 1; i <= 1000; i++) {
+            for (int i = 1; i <= 10000; i++) {
                 MockContext c = mock(i);
                 if(c.getCount()>0) {
                     log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}", i, String.format("%.3f",c.getCount()), String.format("%.3f",c.getMaxWin()),  String.format("%.3f",c.getMinWin()), String.format("%.3f", c.getResult()));
