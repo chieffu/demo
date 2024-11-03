@@ -162,6 +162,18 @@ public class Qlearning {
             throw new RuntimeException(e);
         }
     }
+    public void loadQ(InputStream inputStream){
+        try(ObjectInputStream in = new ObjectInputStream(inputStream)){
+            qMap = (Map<String, double[]>) in.readObject();
+            System.out.println("size:"+qMap.size());
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void loadQ(String path) {
         try(ObjectInputStream in = new ObjectInputStream(new FileInputStream(path))) {
             qMap = (Map<String, double[]>) in.readObject();

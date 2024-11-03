@@ -2,15 +2,18 @@ package com.chieffu.pocker.blackjack;
 
 import com.chieffu.pocker.Pocker;
 import com.chieffu.pocker.util.ThreadSafeLRUCache;
+import lombok.Data;
 import lombok.Getter;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Getter
+@Data
 public class BjTable {
 
     private final String tableId ;
+
+    private String name;
     /**
      * 当前牌局
      */
@@ -20,38 +23,24 @@ public class BjTable {
 
     private Integer status;// 101 结束下注
 
-    ThreadSafeLRUCache<String, BjShoe> shoes  = new ThreadSafeLRUCache<>(100000);
+    ThreadSafeLRUCache<Integer, BjShoe> shoes  = new ThreadSafeLRUCache<>(100000);
 
     public BjTable(String tableId)  {
         this.tableId = tableId;
     }
 
-    public Blackjack getBlackjack() {
-        return getCurrentShoe().getBj();
-    }
+
     /**
      * 获取牌局
      * @param roundId
      * @return
      */
     public BjRound getBjRound(String roundId) {
-        BjRound bjRound = (shoes.get(roundId)!=null?shoes.get(roundId):getCurrentShoe()).getBjRound(roundId);
-        if(bjRound==null){
-            bjRound = new BjRound(roundId);
-            bjRound.setShoeNum(currentRoundNum.get());
-            getCurrentShoe().addRound(bjRound);
-            return bjRound;
-        }
-        return bjRound;
+       return getCurrentShoe().getBjRound(roundId);
     }
 
     public BjShoe getCurrentShoe() {
-        if(currentShoe==null){
-            currentShoe = new BjShoe();
-            currentRoundNum.set(1) ;
-            currentShoe.setTableId(tableId);
-        }
-        return currentShoe;
+        return currentShoe==null?currentShoe=new BjShoe(tableId):currentShoe;
     }
 
     /**
@@ -63,22 +52,31 @@ public class BjTable {
      */
     public synchronized void updateCards(String roundId,List<Pocker> bankCards,List<List<Pocker>> playsCards) throws NotFoundException {
         BjShoe currentShoe = getCurrentShoe();
-        BjShoe his = shoes.get(roundId);
-        if(his==null ){
-            shoes.put(roundId,currentShoe);
-        }
         currentShoe.updateCards(roundId, bankCards, playsCards);
 
     }
 
-    public synchronized void updateStatus(Integer roundNum, String roundId, Integer status) {
-        if(roundNum<currentRoundNum.get()||roundNum==1){
-            currentShoe=null;
+    public synchronized boolean updateStatus(Integer roundNum, String roundId, Integer status) {
+        if (roundNum < currentRoundNum.get() || roundNum == 1) {
+            shoes.put(shoes.size(), currentShoe);
+            currentShoe = new BjShoe(tableId);
         }
-        currentRoundNum.set(roundNum);
+        if (status == 0) {
+            BjRound round = new BjRound(roundId);
+            currentRoundNum.set(roundNum);
+            round.setShoeNum(roundNum);
+            round.setStatus(status);
+            this.status = status;
+            currentShoe.addRound(round);
+            return true;
+        }
         BjRound round = getBjRound(roundId);
+        currentRoundNum.set(roundNum);
+        round.setShoeNum(roundNum);
+        Integer oldStatus = round.getStatus();
         round.setStatus(status);
+        this.status = status;
         getCurrentShoe().addRound(round);
-
+        return status.equals(oldStatus);
     }
 }

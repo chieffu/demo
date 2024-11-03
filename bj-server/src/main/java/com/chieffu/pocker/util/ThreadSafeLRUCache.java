@@ -52,24 +52,24 @@ public class ThreadSafeLRUCache<K, V> {
     }
 
     public static void main(String[] args) {
-        ThreadSafeLRUCache<Integer, String> cache = new ThreadSafeLRUCache<>(2000000); // 缓存最多200M种数据
+        ThreadSafeLRUCache<Integer, String> cache = new ThreadSafeLRUCache<>(2000); // 缓存最多200M种数据
 
         // 模拟缓存操作
-        for (int i = 0; i < 10000000; i++) { // 添加1000万个数据
+        for (int i = 0; i < 100000; i++) { // 添加1000万个数据
             cache.put(i, "Value" + i);
         }
 
         System.out.println("Cache size: " + cache.size());
 
         // 访问一些数据，以观察LRU算法的替换效果
-        for (int i = 0; i < 5000000; i++) { // 访问500万个数据
+        for (int i = 0; i < 500000; i++) { // 访问500万个数据
             cache.get(i);
         }
 
         System.out.println("Cache size after access: " + cache.size());
 
         // 添加更多数据，观察缓存是否达到上限
-        for (int i = 10000000; i < 20000000; i++) { // 再添加1000万个数据
+        for (int i = 100000; i < 200000; i++) { // 再添加1000万个数据
             cache.put(i, "Value" + i);
         }
 
