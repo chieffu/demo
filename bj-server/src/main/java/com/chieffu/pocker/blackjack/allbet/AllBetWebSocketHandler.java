@@ -50,6 +50,7 @@ public class AllBetWebSocketHandler extends AbstractWebSocketHandler {
         try {
             switch (action) {
                 case "pushGameStatus":
+                    log.info("<< {} {}", action, data);
                     JSONArray A = data.getJSONArray("A");
                     if (A != null) {
                         for (int i = 0; i < A.size(); i++) {

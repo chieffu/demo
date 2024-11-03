@@ -1,5 +1,7 @@
 package com.chieffu.pocker.util;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -49,6 +51,14 @@ public class ThreadSafeLRUCache<K, V> {
 
     public int size() {
         return cache.size();
+    }
+
+    public List<V> values(){
+        return new ArrayList<>(cache.values());
+    }
+
+    public List<K> keys(){
+        return new ArrayList<>(queue);
     }
 
     public static void main(String[] args) {

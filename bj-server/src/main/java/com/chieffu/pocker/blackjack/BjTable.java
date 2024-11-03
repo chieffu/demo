@@ -23,7 +23,7 @@ public class BjTable {
 
     private Integer status;// 101 结束下注
 
-    ThreadSafeLRUCache<Integer, BjShoe> shoes  = new ThreadSafeLRUCache<>(100000);
+    ThreadSafeLRUCache<Integer, BjShoe> shoes  = new ThreadSafeLRUCache<>(1000);
 
     public BjTable(String tableId)  {
         this.tableId = tableId;
@@ -51,14 +51,14 @@ public class BjTable {
      * @throws NotFoundException
      */
     public synchronized void updateCards(String roundId,List<Pocker> bankCards,List<List<Pocker>> playsCards) throws NotFoundException {
-        BjShoe currentShoe = getCurrentShoe();
-        currentShoe.updateCards(roundId, bankCards, playsCards);
+        getCurrentShoe().updateCards(roundId, bankCards, playsCards);
 
     }
 
     public synchronized boolean updateStatus(Integer roundNum, String roundId, Integer status) {
         if (roundNum < currentRoundNum.get() || roundNum == 1) {
-            shoes.put(shoes.size(), currentShoe);
+            if(currentShoe!=null)
+                shoes.put(shoes.size(), currentShoe);
             currentShoe = new BjShoe(tableId);
         }
         if (status == 0) {
@@ -67,7 +67,7 @@ public class BjTable {
             round.setShoeNum(roundNum);
             round.setStatus(status);
             this.status = status;
-            currentShoe.addRound(round);
+            getCurrentShoe().addRound(round);
             return true;
         }
         BjRound round = getBjRound(roundId);

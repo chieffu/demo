@@ -34,7 +34,13 @@ public class BjShoe {
     }
 
     public BjRound getBjRound(String roundId) {
-        return roundMap.get(roundId);
+         BjRound bjRound = roundMap.get(roundId);
+         if(bjRound==null){
+             bjRound = new BjRound(roundId);
+             bjRound.setTableId(tableId);
+            roundMap.put(roundId,bjRound);
+         }
+         return bjRound;
     }
 
     public void updateCards(String roundId, List<Pocker> bankCards, List<List<Pocker>> playsCards) throws NotFoundException {
@@ -85,9 +91,9 @@ public class BjShoe {
 
     public Double oneMoreCardWinRate() throws NotFoundException {
         BjRound last = this.getCurrentRound();
-        if(last==null||last.isOver())return null;
+        if(last==null||last.isOver())return 0.0;
         List<Pocker> zpk = last.getBanker();
-        if (zpk.size() != 1) return null;
+        if (zpk.size() != 1) return 0.0;
         Blackjack bj = getBlackjack();
         Integer zCard = Blackjack.dot(Pocker.fromCard(zpk.get(0).getBlackjackDot()));
         Map<Integer, Double> zRateMap = Blackjack.zRate(bj.getPai(), zCard);
@@ -99,7 +105,7 @@ public class BjShoe {
 
     public Double getCurrentWinRate() throws NotFoundException {
         BjRound last = this.getCurrentRound();
-        if(last==null||last.isOver())return null;
+        if(last==null||last.isOver())return 0.0;
         Blackjack bj = getBlackjack();
         List<Pocker> zpk = last.getBanker();
         if (zpk.size() == 0) return bj.xWinExpectation();
