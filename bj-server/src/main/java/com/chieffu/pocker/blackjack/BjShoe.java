@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
 @Data
 public class BjShoe {
     String tableId;
+    Date startTime = new Date();
+
+    Date endTime ;
     public BjShoe(String tableId){
         this.tableId=tableId;
     }
@@ -34,6 +37,7 @@ public class BjShoe {
     }
 
     public BjRound getBjRound(String roundId) {
+        if(roundId==null||roundId.length()==0)return new BjRound(roundId);
          BjRound bjRound = roundMap.get(roundId);
          if(bjRound==null){
              bjRound = new BjRound(roundId);

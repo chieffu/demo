@@ -41,15 +41,15 @@ public class MockBlackjack {
             blackjack.removePocker(pz.get(0));
             int zcard = pz.get(0).getBlackjackDot();
             List<Pocker> px1 = new ArrayList<>();
-           if(px.get(0).getNum()==px.get(1).getNum()){
-             double xwin0 = blackjack.expXWin(xCards,zcard);
-             double splitWin0 = blackjack.expXWin(Arrays.asList(px.get(0).getBlackjackDot()),zcard);
-             if(splitWin0>1){
-                //操作分牌 TODO
-                 log.info("拆牌...");
-                 px1.add(px.remove(0));
-             }
-            }
+//           if(px.get(0).getNum()==px.get(1).getNum()){
+//             double xwin0 = blackjack.expXWin(xCards,zcard);
+//             double splitWin0 = blackjack.expXWin(Arrays.asList(px.get(0).getBlackjackDot()),zcard);
+//             if(splitWin0>1){
+//                //操作分牌 TODO
+//                 log.info("拆牌...");
+//                 px1.add(px.remove(0));
+//             }
+//            }
             while (dot[dot.length - 1] <= 11) {
                 Pocker remove = pks.remove(pks.size() - 1);
                 px.add(remove);
@@ -232,28 +232,26 @@ public class MockBlackjack {
         if (luckyQueue > luckyQueueQ) {
             luckyQueueContext.addCount();
             double r=-1;
-            if (px.get(0).equals(px.get(1))) {
-                Pocker pocker = px.get(0);
-                if (pocker.getSuit().equals(SuitEnum.HEART) && pocker.getNum() == 12) {
-                    int[] zz = Blackjack.dots(pz.get(0),pz.get(1));
-                    if (zz[zz.length - 1] == 21 ) {
-                        r=1000;
+            int[] xx = Blackjack.dotsOfPocker(px);
+            if (xx[xx.length - 1] == 20) {
+                if (px.get(0).equals(px.get(1))) {
+                    Pocker pocker = px.get(0);
+                    if (pocker.getSuit().equals(SuitEnum.HEART) && pocker.getNum() == 12) {
+                        int[] zz = Blackjack.dots(pz.get(0), pz.get(1));
+                        if (zz[zz.length - 1] == 21) {
+                            r = 1000;
+                        } else {
+                            r = 125;
+                        }
                     } else {
-                        r=125;
+                        r = 19;
                     }
                 } else {
-                    r=19;
-                }
-            } else {
-                int[] xx = Blackjack.dotsOfPocker(px);
-                if (xx[xx.length - 1] == 20) {
-                    if (px.get(0).getSuit() == px.get(1).getSuit()) {
-                        r=9;
+                   if (px.get(0).getSuit() == px.get(1).getSuit()) {
+                        r = 9;
                     } else {
-                       r=4;
+                        r = 4;
                     }
-                } else {
-                    r=-1;
                 }
             }
             luckyQueueContext.addResult(r);
@@ -275,7 +273,7 @@ public class MockBlackjack {
         MockContext commonContext = new MockContext("底注");
         MockContext bloomContext = new MockContext("庄爆");
         int cut =  StringUtils.newRandomInt(140, 170);
-        while (pks.size() >cut) {
+        while (pks.size() >cut&&round<=55) {
             round++;
 
             px.add(pks.remove(pks.size() - 1));
@@ -284,10 +282,10 @@ public class MockBlackjack {
             pz.add(pks.remove(pks.size() - 1));
 
             mockLuckyQueue(shift, round, blackjack, pz, px, luckyQueueContext);
-            mockPair(shift, round, blackjack, px, px, pairContext);
+//            mockPair(shift, round, blackjack, px, px, pairContext);
             mockLuckyThree(shift, round, blackjack, pz, px, luckyThreeContext);
             mockHotThree(shift, round, blackjack, pz, px, hotThreeContext);
-
+//
 //            mockCommon(shift, round, blackjack, pz, px, commonContext, pks);
 //            mockBloom(shift, round, blackjack, pz, px, bloomContext);
 

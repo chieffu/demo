@@ -17,7 +17,7 @@ public class BjTable {
     /**
      * 当前牌局
      */
-    private BjShoe currentShoe;
+    private BjShoe currentShoe ;
 
     private final AtomicInteger currentRoundNum = new AtomicInteger(1);
 
@@ -27,6 +27,7 @@ public class BjTable {
 
     public BjTable(String tableId)  {
         this.tableId = tableId;
+        this.currentShoe = new BjShoe(tableId);
     }
 
 
@@ -56,10 +57,16 @@ public class BjTable {
     }
 
     public synchronized boolean updateStatus(Integer roundNum, String roundId, Integer status) {
-        if (roundNum < currentRoundNum.get() || roundNum == 1) {
-            if(currentShoe!=null)
+        this.status=status;
+        if (roundNum>0 && roundNum < currentRoundNum.get() || roundNum == 1) {
+            if(currentShoe!=null&&currentShoe.getRoundList().size()>1) {
+                currentShoe.setEndTime(new Date());
                 shoes.put(shoes.size(), currentShoe);
-            currentShoe = new BjShoe(tableId);
+                currentShoe = new BjShoe(tableId);
+            }
+        }
+        if(status == 109){
+            return false;
         }
         if (status == 0) {
             BjRound round = new BjRound(roundId);
@@ -70,6 +77,7 @@ public class BjTable {
             getCurrentShoe().addRound(round);
             return true;
         }
+
         BjRound round = getBjRound(roundId);
         currentRoundNum.set(roundNum);
         round.setShoeNum(roundNum);

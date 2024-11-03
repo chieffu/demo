@@ -1,6 +1,7 @@
 package com.chieffu.pocker.blackjack.mock;
 
 import com.chieffu.pocker.Pocker;
+import com.chieffu.pocker.SuitEnum;
 import com.chieffu.pocker.bj.Qlearning;
 import com.chieffu.pocker.blackjack.Blackjack;
 import com.chieffu.pocker.blackjack.NotFoundException;
@@ -9,6 +10,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.concurrent.Delayed;
 
 @Slf4j
 @Data
@@ -22,7 +24,7 @@ public class Shoe extends Blackjack {
     public Shoe(int n) {
         super(n);
         cards = Pocker.randomPocker(n);
-        cut = (int)(Math.random()*(180-130))+130;
+        cut = 416-180;
     }
 
     private static Qlearning initQlearning() {
@@ -51,7 +53,7 @@ public class Shoe extends Blackjack {
     }
 
     public void cut(){
-        this.cut =  StringUtils.newRandomInt(140, 170);
+        this.cut =  StringUtils.newRandomInt(234, 240);
     }
 
     public Pocker drawCard() throws NotFoundException {
@@ -353,6 +355,32 @@ public class Shoe extends Blackjack {
 //        projectAlgorithm.saveQ("q.q");
     }
 
+    public double luckyQueenResult(Dealer dealer,Player player){
+        List<Pocker> px = player.getSplits()==null?player.getCards():Arrays.asList(player.getSplits().get(0).getCards().get(0),player.getSplits().get(1).getCards().get(0));
+        int[] xx = Blackjack.dots(px.get(0),px.get(1));
+        double r=-1;
+        if(xx[xx.length - 1] == 20) {
+            if (px.get(0).equals(px.get(1))) {
+                Pocker pocker = px.get(0);
+                if (pocker.getSuit().equals(SuitEnum.HEART) && pocker.getNum() == 12) {
+                    if (dealer.isBlackjack()) {
+                        r = 1000;
+                    } else {
+                        r = 125;
+                    }
+                } else {
+                    r = 19;
+                }
+            } else {
+                if (px.get(0).getSuit() == px.get(1).getSuit()) {
+                    r = 9;
+                } else {
+                    r = 4;
+                }
+            }
+        }
+        return r;
+    }
     private static void adjustQ(com.chieffu.pocker.project.Qlearning projectAlgorithm) {
         int state = 8;
         state += (16 << 5);

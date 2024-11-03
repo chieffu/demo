@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,10 +42,14 @@ public class BjController {
         List<BjRound> rounds = shoe.getRoundList();
         StringBuffer sb = new StringBuffer();
         sb.append("<pre>");
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sb.append(String.format("开始：\t%-20s - %-20s\n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
         for(BjRound r:rounds){
             sb.append(String.format("\t%d\t庄:%-20s\t闲:%-20s\t%-15s\t%-5s\n",r.getShoeNum(),r.getBanker(),r.getPlayers(),r.getRoundId(), r.getStatus()));
         }
+
         sb.append("</pre>");
+
         return sb.toString();
     }
 
@@ -51,10 +57,12 @@ public class BjController {
     public String getCards(@PathVariable("tableId")String tableId) throws NotFoundException {
         List<Integer> keys = service.getTable(tableId).getShoes().keys();
         StringBuffer sb = new StringBuffer();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sb.append("<pre>");
         for(Integer key:keys) {
-            sb.append("SHOE:").append(key).append("\n");
+            sb.append("SHOE:").append(key).append("\t");
             BjShoe shoe = service.getTable(tableId).getShoes().get(key);
+            sb.append(String.format("开始：\t%-20s - %-20s \n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
             List<BjRound> rounds = shoe.getRoundList();
             for (BjRound r : rounds) {
                 sb.append(String.format("\t%d\t庄:%-20s\t闲:%-20s\t%-15s\t%-5s\n",r.getShoeNum(),r.getBanker(),r.getPlayers(),r.getRoundId(), r.getStatus()));

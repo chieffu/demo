@@ -992,7 +992,7 @@ public class Blackjack extends Ma {
         double pureP2_20 = rFlush20Of2Rate();
         double p2_20 = p2(20);
 
-        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair20 - luckyQueen) + (OddsPure20 + 1) * (pureP2_20 - luckyQueen) + (odds20 + 1) * (p2_20 - pureP2_20 - luckyQueen);
+        return (luckyQueenWithBjOdds + 1) * luckyQueenWithBj + (luckyQueenOdds + 1) * (luckyQueen - luckyQueenWithBj) + (purePairOdds + 1) * (purePair20 - luckyQueen) + (OddsPure20 + 1) * (pureP2_20 - purePair20) + (odds20 + 1) * (p2_20 - pureP2_20 - purePair20);
     }
 
     /**
