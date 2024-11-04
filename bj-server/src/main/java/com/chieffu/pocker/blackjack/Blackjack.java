@@ -775,8 +775,8 @@ public class Blackjack extends Ma {
     public double expPair(double purePairOdds, double sameColorPairOdds,double diffColorPairOdds ) {
         double purePairRate = rPurePair();
         double sameColorPate = rSameColorPair();
-        double diffColorPate = rDiffColorPair();
-        return  purePairRate * (1 + purePairOdds) + sameColorPate *(1+sameColorPairOdds) +diffColorPate*(1+diffColorPairOdds);
+        double pairPate = rPair();
+        return  purePairRate * (1 + purePairOdds) +(sameColorPate-purePairRate) *(1+sameColorPairOdds) +(pairPate-sameColorPate)*(1+diffColorPairOdds);
     }
 
     /**
@@ -856,7 +856,7 @@ public class Blackjack extends Ma {
         // 假设我们有一个函数 rPattern() 来检测特定组合的存在与否，并返回概率
         // 这里仅作为示例，实际情况请替换为实际的检测方法
 
-        double pureThreeProb = rPureThree(); // 同色三条的概率
+        double pureThreeProb = rPureThree(); // 同花三条的概率
         double straightFlushProb = rStraightFlush3(); // 同花顺的概率
         double threeProb = rThreeOfKind(); // 任意三条的概率
         double straightProb = rStraight3(); // 顺子的概率
@@ -1277,7 +1277,7 @@ public class Blackjack extends Ma {
         log.info(" sum2 = {}", sum2);
         log.info(" rBjWin = {}", blackjack.rBjWin());
         log.info(" expXWin = {}", blackjack.expXWin());
-        log.info(" expXWin0 = {}", blackjack.expXWin0());
+//        log.info(" expXWin0 = {}", blackjack.expXWin0());
         log.info(" z2 = {}", blackjack.z2());
         for (int i = 0; i <= 16; i++) {
             log.info(" zNotBloom current:{}  rate:{}", i, blackjack.rZNotBloom(i));

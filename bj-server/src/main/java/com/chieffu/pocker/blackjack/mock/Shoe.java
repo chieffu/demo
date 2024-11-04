@@ -1,5 +1,6 @@
 package com.chieffu.pocker.blackjack.mock;
 
+import com.chieffu.pocker.Ma;
 import com.chieffu.pocker.Pocker;
 import com.chieffu.pocker.SuitEnum;
 import com.chieffu.pocker.bj.Qlearning;
@@ -53,7 +54,7 @@ public class Shoe extends Blackjack {
     }
 
     public void cut(){
-        this.cut =  StringUtils.newRandomInt(234, 240);
+        this.cut =  StringUtils.newRandomInt(230, 240);
     }
 
     public Pocker drawCard() throws NotFoundException {
@@ -226,7 +227,7 @@ public class Shoe extends Blackjack {
             }
         }
         double rate =  winCount/(double)(winCount+lossCount);
-        return rate > 0.475;
+        return rate > 0.473;
     }
     public Integer randomCard( int[] pai){
         int countPai = countPai(pai);
@@ -347,15 +348,15 @@ public class Shoe extends Blackjack {
     public boolean isOver() {
         return this.cards.size()<=cut;
     }
+//
+//    public static void main(String[] args)throws Exception {
+//        long start = System.currentTimeMillis();
+//        adjustQ1(projectAlgorithm);
+//        projectAlgorithm.prettyPrintQ(false);
+////        projectAlgorithm.saveQ("q.q");
+//    }
 
-    public static void main(String[] args)throws Exception {
-        long start = System.currentTimeMillis();
-        adjustQ1(projectAlgorithm);
-        projectAlgorithm.prettyPrintQ(false);
-//        projectAlgorithm.saveQ("q.q");
-    }
-
-    public double luckyQueenResult(Dealer dealer,Player player){
+    public double luckyQueenResult(Dealer dealer,Player player,double luckyQueenWithBjOdds, double luckyQueenOdds, double purePairOdds, double OddsPure20, double odds20){
         List<Pocker> px = player.getSplits()==null?player.getCards():Arrays.asList(player.getSplits().get(0).getCards().get(0),player.getSplits().get(1).getCards().get(0));
         int[] xx = Blackjack.dots(px.get(0),px.get(1));
         double r=-1;
@@ -364,22 +365,76 @@ public class Shoe extends Blackjack {
                 Pocker pocker = px.get(0);
                 if (pocker.getSuit().equals(SuitEnum.HEART) && pocker.getNum() == 12) {
                     if (dealer.isBlackjack()) {
-                        r = 1000;
+                        r = luckyQueenWithBjOdds;
                     } else {
-                        r = 125;
+                        r = luckyQueenOdds;
                     }
                 } else {
-                    r = 19;
+                    r = purePairOdds;
                 }
             } else {
                 if (px.get(0).getSuit() == px.get(1).getSuit()) {
-                    r = 9;
+                    r = OddsPure20;
                 } else {
-                    r = 4;
+                    r = odds20;
                 }
             }
         }
         return r;
+    }
+    public double luckyThreeResult(Player player,Dealer dealer,double pureThreeOdds, double straightFlushOdds, double threeOdds, double straightOdds, double flushOdds){
+        List<Pocker> cards = new ArrayList<>();
+        cards.add(dealer.getFirstCard());
+        if(player.getSplits()==null) {
+            cards.add(player.getCards().get(0));
+            cards.add(player.getCards().get(1));
+        }else{
+            cards.add(player.getSplits().get(0).getCards().get(0));
+            cards.add(player.getSplits().get(1).getCards().get(0));
+        }
+        double r=-1;
+        if (Ma.isOneOfKind(cards)) {
+            if (Ma.isFlush(cards))
+                r=pureThreeOdds;
+            else
+                r=threeOdds;
+        } else if (Ma.isFlush(cards)) {
+            if (Ma.isStraight(cards)) {
+                r=straightFlushOdds;
+            } else {
+                r=flushOdds;
+            }
+        } else if (Ma.isStraight(cards)) {
+            r=straightOdds;
+        } else {
+            r=-1;
+        }
+        return r;
+    }
+
+    public double pairResult(Player player, Dealer dealer, double purePairOdds, double sameColorPairOdds,double diffColorPairOdds) {
+        Pocker p1,p2;
+        if(player.getSplits()==null) {
+            p1 = player.getCards().get(0);
+            p2 = player.getCards().get(1);
+        }else{
+            p1 = player.getSplits().get(0).getCards().get(0);
+            p2 = player.getSplits().get(1).getCards().get(0);
+        }
+        if (p1.getNum() == p2.getNum()) {
+            if (p1.getSuit() == p2.getSuit()) {
+                return purePairOdds;
+            } else if(p1.getSuit()==SuitEnum.CLUB && p2.getSuit()==SuitEnum.HEART||
+                    p2.getSuit()==SuitEnum.CLUB && p1.getSuit()==SuitEnum.HEART||
+                    p1.getSuit()==SuitEnum.SPADE && p2.getSuit()==SuitEnum.DIAMOND||
+                    p2.getSuit()==SuitEnum.SPADE && p1.getSuit()==SuitEnum.DIAMOND){
+                return sameColorPairOdds;
+            }else{
+                return diffColorPairOdds;
+            }
+        } else {
+            return -1;
+        }
     }
     private static void adjustQ(com.chieffu.pocker.project.Qlearning projectAlgorithm) {
         int state = 8;
@@ -505,4 +560,5 @@ public class Shoe extends Blackjack {
         q[1]=t;
 
     }
+
 }

@@ -39,21 +39,40 @@ public class Game {
             player.reset();
             dealer.reset();
 
-//            double highLowCardCounting = shoe.highLowCardCounting();
-//            double omegaIICardCounting = shoe.omegaIICardCounting();
+            double highLowCardCounting = shoe.highLowCardCounting();
+            double omegaIICardCounting = shoe.omegaIICardCounting();
 //            double mycount = shoe.myCardCounting();
 //            double zBloom = 1-shoe.rZNotBloom(0);
 //            double x = shoe.xWinExpectation();
 //            double doubleRate = shoe.rDoubleRate();
-            double luckyQueen = shoe.expLuckyQueen(1000, 125, 19, 9, 4);
-            double bet = /*highLowCardCounting>4&&highLowCardCounting>7?2:*/20;
-            player.bet(bet);
-            double result = shoe.play(player,dealer);
-            if(luckyQueen>1.05) {
-                commonContext.addCount(player.getBet());
+//            double luckyQueen = shoe.expLuckyQueen(1000, 125, 19, 9, 4);
+//            double luckyThree = shoe.expLuckThree(100, 40, 30, 10, 5);
+//            double pair = shoe.expPair(25, 12,6);
+            double bet = /*highLowCardCounting>4&&highLowCardCounting>7?2:*/1;
+            if(highLowCardCounting>2 && shoe.shouldBet()) {
+
+                player.bet(bet);
+                double result = shoe.play(player,dealer);
+//            if(luckyQueen>1.05) {
+//                commonContext.addCount(player.getBet());
+//                commonContext.addResult(result);
+//                commonContext.addCount(bet*8);
+//                commonContext.addResult(shoe.luckyQueenResult(dealer, player,1000, 125, 19, 9, 4) * bet*8);
+//            }
+
+//                commonContext.addCount(player.getBet());
                 commonContext.addResult(result);
-                commonContext.addCount(bet*8);
-                commonContext.addResult(shoe.luckyQueenResult(dealer, player) * bet*8);
+                commonContext.addCount(bet);
+//                commonContext.addResult(shoe.pairResult(player, dealer,25,12,6) * bet);
+            }else{
+                shoe.drawCard();
+                shoe.drawCard();
+                shoe.drawCard();
+                shoe.drawCard();
+                double random = Math.random();
+                if(random >0.2)shoe.drawCard();
+                if(random >0.7)shoe.drawCard();
+                if(random >0.9)shoe.drawCard();
             }
         }
 
