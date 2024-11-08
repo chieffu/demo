@@ -89,6 +89,7 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <build>
         <plugins>
@@ -105,6 +106,15 @@
                 </executions>
                 <configuration>
                     <mainClass>com.chieffu.pocker.App</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M5</version> <!-- 请使用最新版本 -->
+                <configuration>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                    <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
         </plugins>

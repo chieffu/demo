@@ -5,7 +5,6 @@ package com.chieffu.pocker.project;
  * This class acts as a card in a typical BlackJack deck
  */
 public class Card implements Comparable<Card> {
-
     public enum Suit {
         DIAMONDS("♦"), HEARTS("❤"), SPADES("♠"), CLUBS("♣");
         String msg;

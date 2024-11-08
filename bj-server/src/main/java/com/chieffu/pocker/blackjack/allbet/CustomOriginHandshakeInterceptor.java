@@ -1,3 +1,4 @@
+
 package com.chieffu.pocker.blackjack.allbet;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -9,6 +10,7 @@ import java.util.Map;
 
 @Component
 public class CustomOriginHandshakeInterceptor implements HandshakeInterceptor {
+
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
