@@ -267,87 +267,91 @@ public class BjService {
     public void updateRoadData(String tableId, List<String> roadData)  {
         BjTable table = getTable(tableId);
         BjShoe shoe = table.getCurrentShoe();
-        synchronized(shoe) {
-            Map<String, Integer> map = new HashMap() {
-                {
-                    this.put("000", 0);
-                    this.put("111", 1);
-                    this.put("222", 2);
-                    this.put("313", 3);
-                    this.put("421", 4);
-                    this.put("512", 5);
-                    this.put("623", 6);
-                    this.put("711", 7);
-                    this.put("822", 8);
-                    this.put("913", 9);
-                    this.put("A21", 10);
-                    this.put("B12", 11);
-                    this.put("C23", 12);
-                    this.put("D14", 13);
-                    this.put("E25", 14);
-                    this.put("F16", 15);
-                    this.put("G24", 16);
-                    this.put("H15", 17);
-                    this.put("I26", 18);
-                    this.put("J34", 19);
-                    this.put("K45", 20);
-                    this.put("L36", 21);
-                    this.put("M44", 22);
-                    this.put("N35", 23);
-                    this.put("O46", 24);
-                    this.put("P37", 25);
-                    this.put("Q48", 26);
-                    this.put("R39", 27);
-                    this.put("S47", 28);
-                    this.put("T38", 29);
-                    this.put("U49", 30);
-                    this.put("V37", 31);
-                    this.put("W48", 32);
-                    this.put("X39", 33);
-                    this.put("Y47", 34);
-                    this.put("Z38", 35);
-                    this.put("a49", 36);
+        Map<String, Integer> map = new HashMap() {
+            {
+                this.put("000", 0);
+                this.put("111", 1);
+                this.put("222", 2);
+                this.put("313", 3);
+                this.put("421", 4);
+                this.put("512", 5);
+                this.put("623", 6);
+                this.put("711", 7);
+                this.put("822", 8);
+                this.put("913", 9);
+                this.put("A21", 10);
+                this.put("B12", 11);
+                this.put("C23", 12);
+                this.put("D14", 13);
+                this.put("E25", 14);
+                this.put("F16", 15);
+                this.put("G24", 16);
+                this.put("H15", 17);
+                this.put("I26", 18);
+                this.put("J34", 19);
+                this.put("K45", 20);
+                this.put("L36", 21);
+                this.put("M44", 22);
+                this.put("N35", 23);
+                this.put("O46", 24);
+                this.put("P37", 25);
+                this.put("Q48", 26);
+                this.put("R39", 27);
+                this.put("S47", 28);
+                this.put("T38", 29);
+                this.put("U49", 30);
+                this.put("V37", 31);
+                this.put("W48", 32);
+                this.put("X39", 33);
+                this.put("Y47", 34);
+                this.put("Z38", 35);
+                this.put("a49", 36);
+            }
+        };
+        int matches = 0;
+        List<BjRound> rounds = shoe.getRoundList();
+        if (shoe.getRoundMap().size() == 0) {
+            long roundId = 0;
+            for (int i = 0; i < roadData.size(); i++) {
+                BjRound newRound = new BjRound("" + (++roundId));
+                newRound.setBanker(Arrays.asList(Pocker.fromCard(map.get(roadData.get(i)))));
+                rounds.add(newRound);
+            }
+        } else {
+            while (matches < roadData.size()) {
+                // 获取最近的 50 个 round
+                rounds.sort(Comparator.naturalOrder());
+                BjRound round = rounds.get(rounds.size() - 1 - matches);
+                long roundId = Long.parseLong(round.getRoundId());
+                int cnt = 0;
+                int k = roadData.size() - 1 - matches;
+                Pocker pocker = Pocker.fromCard(map.get(roadData.get(k)));
+                while (!round.getBanker().isEmpty() && !round.getBanker().get(0).equals(pocker)) {
+                    cnt++;
+                    k--;
+                    if (k < 0) break;
+                    pocker = Pocker.fromCard(map.get(roadData.get(k)));
                 }
-            };
-            int matches = 0;
-            if (shoe.getRoundMap().size() == 0) {
-                long roundId = 0;
-                for (int i = 0; i < roadData.size(); i++) {
+                // 找到i 位置的值，后面的填充
+                while (cnt > 0) {
                     BjRound newRound = new BjRound("" + (++roundId));
-                    newRound.setBanker(Arrays.asList(Pocker.fromCard(map.get(roadData.get(i)))));
-                    shoe.addRound(newRound);
+                    newRound.setBanker(Arrays.asList(Pocker.fromCard(map.get(roadData.get(++k)))));
+                    rounds.add(newRound);
+                    cnt--;
                 }
-            } else {
-                while (matches < roadData.size()) {
-                    // 获取最近的 50 个 round
-                    List<BjRound> rounds = shoe.getRoundList();
-                    BjRound round = rounds.get(rounds.size() - 1 - matches);
-                    long roundId = Long.parseLong(round.getRoundId());
-                    int cnt = 0;
-                    int k = roadData.size() - 1 - matches;
-                    Pocker pocker = Pocker.fromCard(map.get(roadData.get(k)));
-                    while (!round.getBanker().isEmpty() && !round.getBanker().get(0).equals(pocker)) {
-                        cnt++;
-                        k--;
-                        if (k < 0) break;
-                        pocker = Pocker.fromCard(map.get(roadData.get(k)));
-                    }
-                    // 找到i 位置的值，后面的填充
-                    while (cnt > 0) {
-                        BjRound newRound = new BjRound("" + (++roundId));
-                        newRound.setBanker(Arrays.asList(Pocker.fromCard(map.get(roadData.get(++k)))));
-                        shoe.addRound(newRound);
-                        cnt--;
-                    }
-                    matches += cnt + 1;
+                matches += cnt + 1;
+            }
+            rounds.sort(Comparator.naturalOrder());
+            for (int i = 0; i < roadData.size(); i++) {
+                BjRound round = rounds.get(rounds.size() - 1 - i);
+                if (round.getBanker().isEmpty()) {
+                    round.setBanker(Arrays.asList(Pocker.fromCard(map.get(roadData.get(roadData.size() - 1 - i)))));
                 }
-                List<BjRound> rounds = shoe.getRoundList();
-                for (int i = 0; i < roadData.size(); i++) {
-                    BjRound round = rounds.get(rounds.size() - 1 - i);
-                    if (round.getBanker().isEmpty()) {
-                        round.setBanker(Arrays.asList(Pocker.fromCard(map.get(roadData.get(roadData.size() - 1 - i)))));
-                    }
-                }
+            }
+        }
+        synchronized(shoe) {
+            for(BjRound round:rounds){
+                shoe.addRound(round);
             }
         }
     }

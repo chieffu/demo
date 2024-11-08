@@ -126,9 +126,9 @@ public class AllBetWebSocketHandler extends AbstractWebSocketHandler {
                     break;
                 }
                 case "getRoadData": {
-                    updateRoadData(data);
+                    //updateRoadData(data);
                     //{"c":"getRoadData","p":{"G":[["313","D14","L36","913","B12","B12","B12","711","U49","a49","L36","313","822","Y47","Z38","A21","V37","Q48","Y47","E25","711","R39","X39","B12","C23","111","Z38","L36","Z38","913","Y47","G24","G24","111","313","Z38","E25","C23","711","a49","J34","I26","913","F16","H15","C23","V37","S47","Q48","W48"]],"A":0,"B":"","C":169}}
-                    break;
+                   // break;
                     // ... 其他 case 分支
                 }
                 default:
