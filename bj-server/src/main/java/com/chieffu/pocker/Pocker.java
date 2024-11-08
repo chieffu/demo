@@ -9,7 +9,7 @@ import java.security.SecureRandom;
 import java.util.*;
 
 @Data
-public class Pocker implements Serializable {
+public class Pocker implements Serializable,Comparable<Pocker> {
     private static List<Pocker> standard = initPork();
 
     private SuitEnum suit;
@@ -32,7 +32,11 @@ public class Pocker implements Serializable {
      * @return
      */
     public static Pocker fromCard(Integer n) {
-        return new Pocker(n/100, (n%100)%14);
+        if(n>100) {
+            return new Pocker(n / 100, (n % 100) % 14);
+        }else{
+            return new Pocker((n/13)+1,n%13+1);
+        }
     }
 
     public int getBaccaratDot() {
@@ -86,5 +90,14 @@ public class Pocker implements Serializable {
         Collections.shuffle(list, rd);
         Collections.shuffle(list, rd);
         return new LinkedList<>(list);
+    }
+
+    @Override
+    public int compareTo(Pocker o) {
+        if(o==null)return -1;
+        if(this.getSuit()==o.getSuit()){
+            return this.getNum()-o.getNum();
+        }
+        return this.getSuit().compareTo(o.getSuit());
     }
 }

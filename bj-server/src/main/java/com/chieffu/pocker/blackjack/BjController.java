@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -42,14 +39,33 @@ public class BjController {
         List<BjRound> rounds = shoe.getRoundList();
         StringBuffer sb = new StringBuffer();
         sb.append("<pre>");
+        sb.append(service.getTable(tableId).getName());
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        sb.append(String.format("开始：\t%-20s - %-20s\n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
+        sb.append(String.format("：\t%-20s  -  %-20s\n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
         for(BjRound r:rounds){
-            sb.append(String.format("\t%d\t庄:%-20s\t闲:%-20s\t%-15s\t%-5s\n",r.getShoeNum(),r.getBanker(),r.getPlayers(),r.getRoundId(), r.getStatus()));
+            sb.append(String.format("\t%d\t庄:%-20s\t闲:%-20s\t%-15s\t%-5s\n",r.getShoeNum(),r.getBanker().toString(),r.getPlayers().toString(),r.getRoundId(), r.getStatus()));
         }
-
         sb.append("</pre>");
 
+        return sb.toString();
+    }
+
+    @GetMapping("/table/{tableId}/statistic")
+    public String getStatistic(@PathVariable("tableId")String tableId) throws NotFoundException {
+        BjShoe shoe = service.getTable(tableId).getCurrentShoe();
+        List<BjRound> rounds = shoe.getRoundList();
+        Map<Pocker,Integer> statistics = new TreeMap<>();
+        for(BjRound r:rounds){
+            r.getBanker().stream().forEach(p->statistics.put(p,statistics.getOrDefault(p,0)+1));
+            r.getPlayers().stream().flatMap(players->players.stream()).forEach(p->statistics.put(p,statistics.getOrDefault(p,0)+1));
+        }
+        StringBuffer sb = new StringBuffer();
+        sb.append("<pre>");
+        sb.append(service.getTable(tableId).getName());
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sb.append(String.format("：\t%-20s  -  %-20s\n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
+        statistics.forEach((p,n)->sb.append(String.format("\t%-20s\t%-5d\n",p.toString(),n)));
+        sb.append("</pre>");
         return sb.toString();
     }
 
@@ -59,10 +75,11 @@ public class BjController {
         StringBuffer sb = new StringBuffer();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sb.append("<pre>");
+        sb.append(service.getTable(tableId).getName());
         for(Integer key:keys) {
             sb.append("SHOE:").append(key).append("\t");
             BjShoe shoe = service.getTable(tableId).getShoes().get(key);
-            sb.append(String.format("开始：\t%-20s - %-20s \n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
+            sb.append(String.format("\t%-20s  -  %-20s \n",format.format(shoe.getStartTime()) ,format.format(shoe.getEndTime()==null?new Date():shoe.getEndTime())));
             List<BjRound> rounds = shoe.getRoundList();
             for (BjRound r : rounds) {
                 sb.append(String.format("\t%d\t庄:%-20s\t闲:%-20s\t%-15s\t%-5s\n",r.getShoeNum(),r.getBanker(),r.getPlayers(),r.getRoundId(), r.getStatus()));

@@ -14,6 +14,8 @@ public class BjTable {
     private final String tableId ;
 
     private String name;
+
+    private String type;
     /**
      * 当前牌局
      */

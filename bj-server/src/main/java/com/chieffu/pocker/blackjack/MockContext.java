@@ -2,6 +2,9 @@ package com.chieffu.pocker.blackjack;
 
 import lombok.Data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 public class MockContext {
     String name;
@@ -9,7 +12,7 @@ public class MockContext {
     public MockContext(String name) {
         this.name = name;
     }
-
+    Map<String,Object> attribate = new HashMap<>();
     double count = 0;
     double result = 0;
     double maxWin = 0.0;

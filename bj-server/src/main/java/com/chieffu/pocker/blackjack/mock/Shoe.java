@@ -25,7 +25,7 @@ public class Shoe extends Blackjack {
     public Shoe(int n) {
         super(n);
         cards = Pocker.randomPocker(n);
-        cut = 416-180;
+        cut = StringUtils.newRandomInt(180,260);
     }
 
     private static Qlearning initQlearning() {
@@ -177,7 +177,7 @@ public class Shoe extends Blackjack {
         boolean playerHasAce;
         int[] xDots;
         int[] zDots;
-        int cnt = 40000;
+        int cnt = 50000;
         while(cnt-->0){
            player.add(randomCard(pai));
            player.add(randomCard(pai));
@@ -250,7 +250,7 @@ public class Shoe extends Blackjack {
     }
 
     public boolean ShouldPlayerSplit(Player player,Dealer dealer){
-        if(player.getCards().size()==2&&player.getCards().get(0).getNum()==player.getCards().get(1).getNum()){
+        if(player.getCards().size()==2&&player.getCards().get(0).getNum()==player.getCards().get(1).getNum()&&player.getCards().get(0).getNum()!=1){
             double splitWin0 = expXWin(Arrays.asList(player.getCards().get(0).getBlackjackDot()),Blackjack.dot(dealer.getFirstCard()));
             if(splitWin0>=1.0){
                // log.info("闲{} 庄 {}  对子拆分后胜率 {}", player.getCards(),dealer.getCards(),splitWin0);
@@ -304,7 +304,7 @@ public class Shoe extends Blackjack {
                 while(p.shouldHit()){
                     p.hit(drawCard());
                 }
-                if(shouldPlayerHit(p,dealer)){
+                if(p.getCards().get(0).getNum()!=1&&shouldPlayerHit(p,dealer)){
                     p.hit(drawCard());
                 }
 

@@ -1,6 +1,7 @@
 package com.chieffu.pocker.blackjack;
 
 import com.chieffu.pocker.Pocker;
+import com.chieffu.pocker.util.StringUtils;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -20,7 +21,9 @@ public class BjShoe {
     Map<String, BjRound> roundMap = new ConcurrentHashMap<>();
 
     public List<BjRound> getRoundList() {
-        return roundMap.values().stream().sorted(Comparator.comparing(BjRound::getRoundId)).collect(Collectors.toList());
+        return roundMap.values().stream()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     public BjRound getCurrentRound(){
@@ -47,7 +50,7 @@ public class BjShoe {
          return bjRound;
     }
 
-    public void updateCards(String roundId, List<Pocker> bankCards, List<List<Pocker>> playsCards) throws NotFoundException {
+    public synchronized void updateCards(String roundId, List<Pocker> bankCards, List<List<Pocker>> playsCards) throws NotFoundException {
         BjRound bjRound = getBjRound(roundId);
         if (!bankCards.containsAll(bjRound.getBanker())) {
             throw new NotFoundException("第" + roundId + "的庄家牌" + bankCards + "与上报的牌" + bjRound.getBanker() + "不一致");

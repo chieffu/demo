@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Baccarat extends Ma {
     private static final Logger log = LoggerFactory.getLogger(Baccarat.class);
@@ -487,7 +488,7 @@ public class Baccarat extends Ma {
     }
 
     public double expLp() {
-        return (rZLp()+rXLp()- (countXZ22(8, 8) + countXZ22(9, 9)+countXZ22(9, 8) + countXZ22(8, 9))/p(countPai(),4))*2.6;
+        return (rZLp()+rXLp())*2.6;
     }
 
     public double rZLp() {
@@ -540,11 +541,12 @@ public class Baccarat extends Ma {
         }
         return sum /(double) c(countPai1(), 2);
     }
+
     public double rAnyPair() {
         long sum = 0L;
         int[] nums = new int[pk.length];
         int countPai = countPai();
-        double total = c(countPai(),4);
+        double total = c(countPai,4);
         for (int i1 = 0; i1 < this.pk.length; i1++) {
             nums[i1]=getSum(this.pk[i1]);
         }
@@ -556,6 +558,8 @@ public class Baccarat extends Ma {
             for(int j=0;j<nums.length;j++){
                 if(i!=j)
                 pairPair+=c(nums[i],2)*c(nums[j],2);
+                else
+                    pairPair+=c(nums[i],4);
             }
         }
 
@@ -727,8 +731,8 @@ public class Baccarat extends Ma {
         MockContext zContext = new MockContext("庄");
         MockContext lipaiContext = new MockContext("例牌");
         MockContext anyPairContext = new MockContext("超级对");
-        int cut =  StringUtils.newRandomInt(416-240, 416-256);
-        while (pks.size()>cut&&round<60) {
+        int cut =  StringUtils.newRandomInt(416-250, 416-220);
+        while (pks.size()>cut&&round<=60) {
             round++;
 
             px.add(pks.remove(pks.size() - 1));
@@ -762,6 +766,7 @@ public class Baccarat extends Ma {
             }
 
 //            mockSmal(shift, baccarat, round, pz, px, smallContext, gate);
+//            mockZXLipai(shift, baccarat, round, pz, px, lipaiContext,gate);
             mockLipai(shift, baccarat, round, pz, px, lipaiContext,gate);
 //            mockAnyPair(shift, baccarat, round, pz, px, anyPairContext,gate);
 
@@ -895,6 +900,7 @@ public class Baccarat extends Ma {
         return total;
     }
     private static boolean mockSmal(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
+        if(round>20)return false;
         double expXWin = bj.rSmall()*2.5;
         if(expXWin>=gate) {
             double result = -1;
@@ -910,8 +916,36 @@ public class Baccarat extends Ma {
         }
         return false;
     }
+
+    private static boolean mockZXLipai(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
+        if(round>64)return false;
+        double rate = bj.rZLp();
+        double exp = rate*5+(bj.countXZ22(8,8)+bj.countXZ22(9,9))*1.0/ p(bj.countPai(),4);
+        if(exp>=gate) {
+            double result = 0;
+            int px2 = px.stream().map(Pocker::getBaccaratDot).reduce((a,b)->a+b).get();
+            int pz2 = pz.stream().map(Pocker::getBaccaratDot).reduce((a,b)->a+b).get();
+            if(px.size()==2&& (px2==8||px2==9||px2==18)){
+                result +=4;
+            }else{
+                result-=1;
+            }
+            if(pz.size()==2 && (pz2==8||pz2==9||pz2==18)){
+                result +=4;
+            }else{
+                result-=1;
+            }
+            xContext.addCount();
+            xContext.addResult(result);
+            log.info("第{}靴第{}局压{}:{} ---- cnt: {} min: {} max: {}  result: {}   结果 {}  {} - {} "
+                    , shift, round,xContext.getName(),String.format("%.4f",exp), xContext.getCount()
+                    , String.format("%.2f",xContext.getMinWin()), String.format("%.2f",xContext.getMaxWin()), String.format("%.2f",xContext.getResult()),String.format("%.2f",result), px,  pz);
+            return true;
+        }
+        return false;
+    }
     private static boolean mockLipai(int shift, Baccarat bj, int round, List<Pocker> pz, List<Pocker> px, MockContext xContext,double gate) {
-        if(round>25)return false;
+        if(round>30)return false;
         double expLp = bj.expLp();;
         if(expLp>=gate) {
             double result = -1;
@@ -951,20 +985,23 @@ public class Baccarat extends Ma {
         }
         return false;
     }
+
     public static void main(String[] arg) throws Exception {
         Baccarat pock = new Baccarat();
         pock.init(8);
         logger.info("庄{} {}", pock.rZWin(), pock.rZWin() * 1.95D);
         logger.info("闲{} {}", pock.rXWin(), pock.rXWin() * 2.0D);
         logger.info("平{} {}", pock.rHe(), pock.rHe() * 9.0D);
+        logger.info("庄 闲 平 {}",pock.rZWin()+pock.rXWin()+pock.rHe());
         logger.info("小{} {}", pock.rSmall(), pock.rSmall() * 2.5D);
         logger.info("大{} {}", 1.0D - pock.rSmall(), (1.0D - pock.rSmall()) * 1.5D);
         logger.info("对{} {}", pock.rPair(), pock.rPair() * 12.0D);
-        logger.info("对{}  {} > 1.2", pock.rAnyPair(), pock.rAnyPair()*2.2);
+        logger.info("超级对{}  {} > 1.2", pock.rAnyPair(), pock.rAnyPair()*2.2);
         logger.info("例牌{} {}", pock.rLp0()*2, pock.rLp0()*2 * 2.6);
         logger.info("庄例牌{} {}", pock.rZLp(), pock.rZLp() * 5.0D);
         logger.info("闲龙宝 {}", pock.xLongBao());
         logger.info("庄龙宝 {}", pock.zLongBao());
+        logger.info("庄例牌 {}  {}", pock.rZLp(),pock.rZLp()*5+(pock.countXZ22(8,8)+pock.countXZ22(9,9))*1.0/ p(pock.countPai(),4));
 
         double l = 0;
         for(int i=0;i<6;i++){
@@ -976,12 +1013,14 @@ public class Baccarat extends Ma {
         logger.info("超级6 {}  {}",l*1.0/p(pock.countPai(),6),pock.rZBig6()+ pock.rZSmall6());
 
         MockContext c0 = new MockContext("total");
-//        for (int i = 1; i <= 10000; i++) {
-//            MockContext c = mockLongHu(i,1.00);
-//            log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}",i, c.getCount(), String.format("%.2f",c.getMaxWin()), String.format("%.2f",c.getMinWin()),String.format("%.2f", c.getResult()));
-//            c0.merge(c);
-//            log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f",c0.getMaxWin()), String.format("%.2f",c0.getMinWin()), String.format("%.2f",c0.getResult()));
-//        }
+            for (int i = 1; i <= 10000; i++) {
+                MockContext c = mock(i,1);
+                if(c.getCount()>0) {
+                    log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}", i, c.getCount(), String.format("%.2f", c.getMaxWin()), String.format("%.2f", c.getMinWin()), String.format("%.2f", c.getResult()));
+                    c0.merge(c);
+                    log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f", c0.getMaxWin()), String.format("%.2f", c0.getMinWin()), String.format("%.2f", c0.getResult()));
+                }
+            }
 
     }
 }

@@ -49,7 +49,7 @@ public class Game {
 //            double luckyThree = shoe.expLuckThree(100, 40, 30, 10, 5);
 //            double pair = shoe.expPair(25, 12,6);
             double bet = /*highLowCardCounting>4&&highLowCardCounting>7?2:*/1;
-            if(highLowCardCounting>2 && shoe.shouldBet()) {
+            if(highLowCardCounting>4) {
 
                 player.bet(bet);
                 double result = shoe.play(player,dealer);
