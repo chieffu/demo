@@ -5,6 +5,7 @@ import com.chieffu.pocker.Pocker;
 import com.chieffu.pocker.SuitEnum;
 import com.chieffu.pocker.blackjack.MockContext;
 import com.chieffu.pocker.util.StringUtils;
+import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -511,6 +512,9 @@ public class Baccarat extends Ma {
             removePocker(p);
         }
     }
+    public void removePai(int num){
+        this.pai[num]--;
+    }
 
     public void removePai(int num, int huaSe) {
         int k = this.pk[num - 1][huaSe-1];
@@ -816,6 +820,288 @@ public class Baccarat extends Ma {
         }
         return black/total;
     }
+
+    public double rXwinWhen(int x){
+//        List<List<Integer>> xWins = new ArrayList<>();
+//        if(x==9||x==8){
+//            long total = c(countPai(), 2);
+//            long xw = 0;
+//            for(int i=0;i<=9;i++){
+//                for(int j=i;j<=9;j++){
+//                    int z2 = (i+j)%10;
+//                    if(z2<x)
+//                        if(i==j)
+//                            xw += c(countPai(i),2);
+//                        else
+//                            xw += countPai(i)*countPai(j);
+//                }
+//            }
+//            return xw*1.0/total;
+//        }
+//        for(int i=0;i<=9;i++){
+//            for(int j=i;j<=9;j++){
+//                int z2 = (i+j)%10;
+//                if(z2<x){
+//                    List<Integer> list = new ArrayList<>();
+//                    list.add(i);
+//                    list.add(j);
+//                    xWins.add(list);
+//                }
+//            }
+//        }
+        //TODO
+        return 0.0;
+    }
+    // 在Baccarat类中添加以下改进
+
+    // 深度克隆当前牌堆状态
+    private Baccarat cloneState() {
+        Baccarat clone = new Baccarat();
+        clone.pai = Arrays.copyOf(this.pai, this.pai.length);
+        clone.pk = Arrays.stream(this.pk)
+                .map(int[]::clone)
+                .toArray(int[][]::new);
+        return clone;
+    }
+
+    // 核心概率计算改进
+    public double calculateZWinProbabilityGivenX(int x) {
+        Baccarat originalState = this.cloneState();
+        long[] result = new long[2]; // [total, zWin]
+
+        // 遍历所有可能的庄家初始两张牌组合
+        for (int z1 = 0; z1 <= 9; z1++) {
+            for (int z2 = 0; z2 <= 9; z2++) {
+                if (originalState.countPai(z1) == 0 ||
+                        originalState.countPai(z2) == 0) continue;
+
+                Baccarat tempState = originalState.cloneState();
+                if (!tempState.tryRemoveTwoCards(z1, z2)) continue;
+
+                processBankerInitialHand(x, z1, z2, tempState, result);
+            }
+        }
+
+        return result[0] == 0 ? 0 : (double) result[1] / result[0];
+    }
+
+    private void processBankerInitialHand(int x, int z1, int z2,
+                                          Baccarat currentState, long[] result) {
+        int zInitial = (z1 + z2) % 10;
+        boolean xDrawThird = (x <= 5);
+
+        if (xDrawThird) {
+            processPlayerThirdCard(x, zInitial, currentState, result);
+        } else {
+            processBankerDrawWithoutPlayerCard(x, zInitial, currentState, result);
+        }
+    }
+    // 添加在Baccarat类中
+    private void processBankerDrawWithoutPlayerCard(int xFinal, int zInitial,
+                                                    Baccarat state, long[] result) {
+        // 根据百家乐规则判断庄家是否需要补牌
+        boolean zDraw = zInitial <= 5; // 闲家未补牌时庄家补牌规则
+
+        if (zDraw) {
+            // 庄家需要补第三张牌
+            for (int z3 = 0; z3 <= 9; z3++) {
+                Baccarat finalState = state.cloneState();
+                if (finalState.countPai(z3) == 0) continue;
+
+                finalState.removePai(z3);
+                int zFinal = (zInitial + z3) % 10;
+
+                long combinations = finalState.countPai(); // 剩余牌数作为组合数
+                updateResult(zFinal, xFinal, combinations, result);
+            }
+        } else {
+            // 庄家不补牌直接比较
+            long combinations = state.countPai();
+            updateResult(zInitial, xFinal, combinations, result);
+        }
+    }
+    private void processPlayerThirdCard(int x, int zInitial,
+                                        Baccarat currentState, long[] result) {
+        for (int x3 = 0; x3 <= 9; x3++) {
+            Baccarat x3State = currentState.cloneState();
+            if (x3State.countPai(x3) == 0) continue;
+
+            x3State.removePai(x3);
+            int xFinal = (x + x3) % 10;
+
+            boolean zDraw = shouldBankerDraw(zInitial, x3);
+            processBankerDraw(zInitial, xFinal, zDraw, x3State, result);
+        }
+    }
+
+    private void processBankerDraw(int zInitial, int xFinal, boolean zDraw,
+                                   Baccarat state, long[] result) {
+        if (zDraw) {
+            for (int z3 = 0; z3 <= 9; z3++) {
+                Baccarat finalState = state.cloneState();
+                if (finalState.countPai(z3) == 0) continue;
+
+                finalState.removePai(z3);
+                int zFinal = (zInitial + z3) % 10;
+
+                long combinations = calculateValidCombinations(finalState);
+                updateResult(zFinal, xFinal, combinations, result);
+            }
+        } else {
+            long combinations = calculateValidCombinations(state);
+            updateResult(zInitial, xFinal, combinations, result);
+        }
+    }
+
+    // 辅助方法
+    private boolean tryRemoveTwoCards(int num1, int num2) {
+        if (countPai(num1) < 1 || countPai(num2) < 1) return false;
+        removePai(num1);
+        removePai(num2);
+        return true;
+    }
+
+    private void updateResult(int zPoints, int xPoints,
+                              long combinations, long[] result) {
+        result[0] += combinations;
+        if (zPoints > xPoints) {
+            result[1] += combinations;
+        }
+    }
+
+    private long calculateValidCombinations(Baccarat state) {
+        // 根据剩余牌数计算实际组合数
+        return state.countPai() > 0 ? 1 : 0; // 需扩展实现
+    }
+
+
+
+    private static void testSpecialCases(Baccarat bj) {
+        // 测试自然8/9的情况
+        System.out.println("\n自然8/9测试：");
+        System.out.println("闲家8点胜率：" + bj.calculateXWinProbability(8));
+        System.out.println("庄家9点胜率：" + bj.calculateZWinProbabilityGivenX(9));
+
+        // 测试需要补牌的情况
+        System.out.println("\n补牌测试：");
+        System.out.println("闲家5点胜率：" + bj.calculateXWinProbability(5));
+        System.out.println("庄家3点对闲家补3：" + bj.calculateZWinProbabilityGivenX(3));
+    }
+
+    public double calculateXWinProbability(int x) {
+        long total = 0L;
+        long xWinCount = 0L;
+
+        // 遍历庄家前两张牌的所有可能组合
+        for (int z1 = 0; z1 <= 9; z1++) {
+            for (int z2 = 0; z2 <= 9; z2++) {
+                int zInitial = (z1 + z2) % 10;
+
+                boolean xDrawThird = (x <= 5); // 闲是否需要补牌
+
+                // 闲家补牌逻辑
+                if (xDrawThird) {
+                    for (int x3 = 0; x3 <= 9; x3++) {
+                        int xAfterDraw = (x + x3) % 10;
+
+                        // 计算庄家是否需要补牌
+                        boolean zDraw = shouldBankerDraw(zInitial, x3);
+
+                        // 处理庄家补牌
+                        if (zDraw) {
+                            for (int z3 = 0; z3 <= 9; z3++) {
+                                int zAfterDraw = (zInitial + z3) % 10;
+
+                                // 计算组合数并累加
+                                long combinations = calculateCombinations(z1, z2, x3, z3, xDrawThird);
+                                total += combinations;
+                                if (xAfterDraw > zAfterDraw) {
+                                    xWinCount += combinations;
+                                }
+                            }
+                        } else {
+                            // 庄家不补牌的情况
+                            long combinations = calculateCombinations(z1, z2, x3, -1, xDrawThird);
+                            total += combinations;
+                            if (xAfterDraw > zInitial) {
+                                xWinCount += combinations;
+                            }
+                        }
+                    }
+                } else {
+                    // 闲家不补牌，直接处理庄家补牌逻辑
+                    boolean zDraw = shouldBankerDraw(zInitial, -1);
+
+                    if (zDraw) {
+                        for (int z3 = 0; z3 <= 9; z3++) {
+                            int zAfterDraw = (zInitial + z3) % 10;
+
+                            long combinations = calculateCombinations(z1, z2, -1, z3, false);
+                            total += combinations;
+                            if (x > zAfterDraw) {
+                                xWinCount += combinations;
+                            }
+                        }
+                    } else {
+                        long combinations = calculateCombinations(z1, z2, -1, -1, false);
+                        total += combinations;
+                        if (x > zInitial) {
+                            xWinCount += combinations;
+                        }
+                    }
+                }
+            }
+        }
+
+        return total == 0 ? 0 : (double) xWinCount / total;
+    }
+
+    // 判断庄家是否需要补牌
+    private boolean shouldBankerDraw(int bankerPoints, Integer playerThirdCard) {
+        if (bankerPoints >= 7) return false;
+        if (bankerPoints <= 2) return true;
+
+        if (playerThirdCard == null) {
+            return bankerPoints <= 5;
+        }
+
+        int thirdCardValue = playerThirdCard;
+        switch (bankerPoints) {
+            case 3: return thirdCardValue != 8;
+            case 4: return !(thirdCardValue == 0 || thirdCardValue == 1 || thirdCardValue == 8 || thirdCardValue == 9);
+            case 5: return !(thirdCardValue >= 0 && thirdCardValue <= 3 || thirdCardValue == 8 || thirdCardValue == 9);
+            case 6: return thirdCardValue == 6 || thirdCardValue == 7;
+            default: return false;
+        }
+    }
+
+    // 计算组合数（需根据实际剩余牌数实现）
+    private long calculateCombinations(int z1, int z2, int x3, int z3, boolean xDrawThird) {
+        // 实现需要考虑：
+        // 1. 庄家前两张牌的剩余数量
+        // 2. 闲家第三张牌（如果补牌）的剩余数量
+        // 3. 庄家第三张牌（如果补牌）的剩余数量
+
+        // 示例实现框架：
+        long combinations = 1L;
+
+        // 计算庄家前两张牌的组合
+        combinations *= countPai(z1) * countPai(z2);
+        if (z1 == z2) combinations /= 2; // 去重处理
+
+        // 闲家第三张牌
+        if (xDrawThird) {
+            combinations *= countPai(x3);
+        }
+
+        // 庄家第三张牌
+        if (z3 != -1) {
+            combinations *= countPai(z3);
+        }
+
+        return combinations;
+    }
+
     public static MockContext mockLongHu(int shift,double gate) {
         Baccarat baccarat = new Baccarat();
         List<Pocker> pks = Pocker.randomPocker(8);
@@ -1003,6 +1289,12 @@ public class Baccarat extends Ma {
         logger.info("庄龙宝 {}", pock.zLongBao());
         logger.info("庄例牌 {}  {}", pock.rZLp(),pock.rZLp()*5+(pock.countXZ22(8,8)+pock.countXZ22(9,9))*1.0/ p(pock.countPai(),4));
 
+        logger.info("闲知道前2张牌的情况下赢的概率：");
+        for(int i=0;i<=9;i++){
+            logger.info("{}-闲:{}",i,pock.calculateXWinProbability(i));
+            logger.info("{}-庄:{}",i,pock.calculateZWinProbabilityGivenX(i));
+        }
+        testSpecialCases(pock);
         double l = 0;
         for(int i=0;i<6;i++){
             l+=pock.countXZ33(i,6);
@@ -1012,15 +1304,15 @@ public class Baccarat extends Ma {
 
         logger.info("超级6 {}  {}",l*1.0/p(pock.countPai(),6),pock.rZBig6()+ pock.rZSmall6());
 
-        MockContext c0 = new MockContext("total");
-            for (int i = 1; i <= 10000; i++) {
-                MockContext c = mock(i,1);
-                if(c.getCount()>0) {
-                    log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}", i, c.getCount(), String.format("%.2f", c.getMaxWin()), String.format("%.2f", c.getMinWin()), String.format("%.2f", c.getResult()));
-                    c0.merge(c);
-                    log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f", c0.getMaxWin()), String.format("%.2f", c0.getMinWin()), String.format("%.2f", c0.getResult()));
-                }
-            }
+//        MockContext c0 = new MockContext("total");
+//        for (int i = 1; i <= 10000; i++) {
+//            MockContext c = mock(i,1);
+//            if(c.getCount()>0) {
+//                log.info("第{}靴---次数 = {} -----max={} ----- min={}----结果 = {}", i, c.getCount(), String.format("%.2f", c.getMaxWin()), String.format("%.2f", c.getMinWin()), String.format("%.2f", c.getResult()));
+//                c0.merge(c);
+//                log.info("total---次数 = {} -----max={} ----- min={}----结果 = {}", c0.getCount(), String.format("%.2f", c0.getMaxWin()), String.format("%.2f", c0.getMinWin()), String.format("%.2f", c0.getResult()));
+//            }
+//        }
 
     }
 }

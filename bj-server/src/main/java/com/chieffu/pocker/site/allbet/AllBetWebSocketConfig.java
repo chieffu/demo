@@ -28,7 +28,7 @@ public class AllBetWebSocketConfig implements WebSocketConfigurer {
     }
 
     @Bean
-    public ServerEndpointExporter serverEndpointExporter() {
+    public ServerEndpointExporter allbetServerEndpointExporter() {
         return new ServerEndpointExporter() {
             @Override
             public void afterPropertiesSet() {

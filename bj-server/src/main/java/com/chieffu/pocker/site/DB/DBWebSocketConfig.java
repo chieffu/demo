@@ -28,7 +28,7 @@ public class DBWebSocketConfig implements WebSocketConfigurer {
     }
 
     @Bean
-    public ServerEndpointExporter serverEndpointExporter() {
+    public ServerEndpointExporter dbServerEndpointExporter() {
         return new ServerEndpointExporter() {
             @Override
             public void afterPropertiesSet() {
